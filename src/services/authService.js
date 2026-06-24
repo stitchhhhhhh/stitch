@@ -1,46 +1,36 @@
 /**
  * authService.js
- *
- * SEKARANG: simulasi login — tidak ada network call asli, cuma pilih
- * mock user berdasarkan role yang dipilih di dropdown "Login as" (testing only).
- *
- * NANTI (begitu tim backend kasih kontrak API):
- *   export async function loginWithSso() {
- *     const res = await api.post('/auth/sso-callback');
- *     return res.data; // { user, role, token }
- *   }
- *
- * Bentuk return value SENGAJA dibuat mirip kemungkinan response asli:
- * { user, role, token } — supaya saat nanti diganti axios call,
- * komponen yang sudah memakai loginWithRole()/loginWithSso() TIDAK perlu diubah,
- * cukup isi function ini saja yang diganti.
+ * Terintegrasi dengan backend Google OAuth (localhost:3000)
  */
-
 import { users, roles } from '../mock/users';
 
 const delay = (ms = 400) => new Promise((resolve) => setTimeout(resolve, ms));
 
-// Dipakai dropdown "Login as" — HANYA untuk development/testing,
-// hapus pemanggilan ini begitu backend auth sudah siap.
+// HANYA untuk development/testing
 export async function loginWithRole(roleName) {
   await delay();
   const role = roles.find((r) => r.role_name === roleName);
   const user = users.find((u) => u.role_id === role?.role_id);
-
   if (!user) {
     throw new Error(`Tidak ada mock user untuk role "${roleName}"`);
   }
-
   return {
     user,
     role: roleName,
-    token: 'mock-token-' + user.user_id, // placeholder, nanti dari JWT asli BE
+    token: 'mock-token-' + user.user_id,
   };
 }
 
-// Placeholder untuk nanti — dipanggil saat tombol "Login with Company SSO" diklik.
-export async function loginWithSso() {
-  await delay();
-  // TODO: ganti dengan redirect ke SSO provider / axios.post('/auth/sso-callback')
-  throw new Error('SSO belum terhubung ke backend. Gunakan dropdown "Login as" untuk testing.');
+// Login dengan Google OAuth — redirect ke backend
+export async function loginWithGoogle() {
+  window.location.href = 'http://localhost:3000/api/auth/google';
+}
+
+// Dipanggil di AuthCallback setelah redirect balik dari Google
+export async function fetchUserFromToken(token) {
+  const res = await fetch('http://localhost:3000/api/auth/me', {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error('Gagal mengambil data user');
+  return res.json(); // { user, role }
 }
