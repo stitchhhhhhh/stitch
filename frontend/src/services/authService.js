@@ -23,7 +23,7 @@ export async function loginWithRole(roleName) {
 
 // Login dengan Google OAuth — redirect ke backend
 export async function loginWithGoogle() {
-  window.location.href = 'http://localhost:3000/api/auth/google';
+  window.location.href = '/api/auth/google';
 }
 
 // Dipanggil di AuthCallback setelah redirect balik dari Google
