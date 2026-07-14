@@ -3,7 +3,7 @@
  * Sama prinsipnya seperti courseService.js — mock sekarang, axios nanti.
  */
 
-import { currentUser, users } from '../mock/users';
+import { currentUser, users, departments } from '../mock/users';
 import { notifications } from '../mock/courses';
 import { certificates } from '../mock/courses';
 
@@ -29,4 +29,21 @@ export async function getNotifications(userId) {
 export async function getCertificates(userId) {
   await delay();
   return certificates.filter((c) => c.user_id === userId);
+}
+
+// Ranking user berdasarkan total_points, dilengkapi nama department.
+// Nanti diganti endpoint /leaderboard dari backend.
+export async function getLeaderboard() {
+  await delay();
+  return users
+    .map((u) => {
+      const dept = departments.find((d) => d.department_id === u.department_id);
+      return {
+        user_id: u.user_id,
+        full_name: u.full_name,
+        department_name: dept?.department_name || '',
+        total_points: u.total_points,
+      };
+    })
+    .sort((a, b) => b.total_points - a.total_points);
 }
