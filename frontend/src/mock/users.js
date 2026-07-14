@@ -4,6 +4,8 @@ export const departments = [
   { department_id: 1, department_name: 'Information Technology', description: 'IT & Engineering' },
   { department_id: 2, department_name: 'Finance', description: 'Finance & Accounting' },
   { department_id: 3, department_name: 'Human Resources', description: 'People & Culture' },
+  { department_id: 4, department_name: 'Marketing', description: 'Marketing & Brand' },
+  { department_id: 5, department_name: 'Operations', description: 'Operations & Logistics' },
 ];
 
 export const roles = [
@@ -21,7 +23,7 @@ export const users = [
     full_name: 'Ara Sitorus',
     email: 'ara.sitorus@company.com',
     status: 'active',
-    total_points: 1280,
+    total_points: 1250,
   },
   {
     user_id: 2,
@@ -49,6 +51,35 @@ export const users = [
     email: 'maria.chen@company.com',
     status: 'active',
     total_points: 0,
+  },
+  // Employee lain buat ngisi leaderboard, biar Top Learners nggak cuma 1 orang.
+  // Nanti ini hilang dengan sendirinya begitu data leaderboard asli datang dari backend.
+  {
+    user_id: 5,
+    role_id: 1,
+    department_id: 4,
+    full_name: 'Sarah Diana',
+    email: 'sarah.diana@company.com',
+    status: 'active',
+    total_points: 2480,
+  },
+  {
+    user_id: 6,
+    role_id: 1,
+    department_id: 1,
+    full_name: 'Ilfa Nur Fatimah',
+    email: 'ilfa.fatimah@company.com',
+    status: 'active',
+    total_points: 2150,
+  },
+  {
+    user_id: 7,
+    role_id: 1,
+    department_id: 5,
+    full_name: 'Bunga Ayu',
+    email: 'bunga.ayu@company.com',
+    status: 'active',
+    total_points: 1920,
   },
 ];
 
