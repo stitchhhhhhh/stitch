@@ -6,7 +6,7 @@ LOG_FILE="$LOG_DIR/lms-sandbox.log"
 sudo mkdir -p "$LOG_DIR"
 sudo chown "$(whoami):$(whoami)" "$LOG_DIR"
 
-REF="$1"
+REF="${1:-develop}"
 TIMESTAMP=$(date '+%Y-%m-%d %H:%M:%S')
 
 exec > >(tee -a "$LOG_FILE") 2>&1
