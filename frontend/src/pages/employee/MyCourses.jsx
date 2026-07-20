@@ -88,18 +88,127 @@ function CourseCard({ course, onClick }) {
 
 export default function MyCourses() {
   const { user } = useAuth();
-  const userId = user?.user_id ?? 1;
+  const userId = user?.user_id;
   const navigate = useNavigate();
 
   const [courses, setCourses] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('all');
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    getMyCourses(userId).then((data) => {
-      setCourses(data);
+    let isMounted = true;
+
+    async function loadCourses() {
+      if (!userId) {
+        if (isMounted) {
+          setCourses([]);
+          setLoading(false);
+        }
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError('');
+
+        const data = await Promise.race([
+  getMyCourses(userId),
+
+  new Promise((_, reject) =>
+    setTimeout(
+      () =>
+        reject(
+          new Error(
+            "Request courses terlalu lama. Silakan coba kembali."
+          )
+        ),
+      15000
+    )
+  ),
+]);
+
+        if (isMounted) {
+          setCourses(
+            Array.isArray(data) ? data : []
+          );
+        }
+      } catch (err) {
+        if (!isMounted) return;
+
+        console.error('MY COURSES ERROR:', err);
+
+        setError(
+          err?.message || 'Failed to load courses.'
+        );
+
+        setCourses([]);
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
+    }
+
+   async function loadCourses() {
+  if (!userId) {
+    if (isMounted) {
+      setCourses([]);
       setLoading(false);
-    });
+    }
+    return;
+  }
+
+  try {
+    setLoading(true);
+    setError("");
+
+    console.log("Loading courses for user:", userId);
+
+    const data = await Promise.race([
+      getMyCourses(userId),
+
+      new Promise((_, reject) =>
+        setTimeout(
+          () =>
+            reject(
+              new Error(
+                "Request courses terlalu lama."
+              )
+            ),
+          15000
+        )
+      ),
+    ]);
+
+    console.log("MY COURSES RESPONSE:", data);
+
+    if (!isMounted) return;
+
+    setCourses(
+      Array.isArray(data) ? data : []
+    );
+  } catch (err) {
+    if (!isMounted) return;
+
+    console.error("MY COURSES ERROR:", err);
+
+    setError(
+      err?.message ||
+        "Failed to load courses."
+    );
+
+    setCourses([]);
+  } finally {
+    if (isMounted) {
+      setLoading(false);
+    }
+  }
+}
+
+    return () => {
+      isMounted = false;
+    };
   }, [userId]);
 
   const FILTERS = [
@@ -118,6 +227,26 @@ export default function MyCourses() {
     return (
       <div className="flex items-center justify-center h-64 text-gray-400">
         Loading courses...
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 text-red-700 rounded-2xl p-6">
+        <h2 className="font-bold">
+          Courses could not be loaded
+        </h2>
+
+        <p className="text-sm mt-2">{error}</p>
+
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+        >
+          Try Again
+        </button>
       </div>
     );
   }

@@ -1,11 +1,12 @@
 export default function NotificationActionButton({
   text,
   secondary = false,
+  onClick,
 }) {
   return (
     <button
+      onClick={onClick}
       className={`px-6 py-3 rounded-xl font-medium transition
-
       ${
         secondary
           ? "border bg-white hover:bg-gray-100"

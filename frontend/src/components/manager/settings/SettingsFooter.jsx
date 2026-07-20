@@ -1,46 +1,42 @@
 import { RotateCcw } from "lucide-react";
 
-export default function SettingsFooter() {
+export default function SettingsFooter({
+  onReset,
+  onCancel,
+  onSave,
+  saving = false,
+}) {
   return (
     <div className="flex items-center justify-between mt-10">
-
-      <button className="flex items-center gap-2 text-gray-500 hover:text-black">
-
+      <button
+        type="button"
+        onClick={onReset}
+        className="flex items-center gap-2 text-gray-500 hover:text-black"
+      >
         <RotateCcw size={18} />
-
         Reset Settings
-
       </button>
 
       <div className="flex gap-4">
-
         <button
-          className="
-            px-8
-            py-3
-            rounded-xl
-            border
-            hover:bg-gray-100
-          "
+          type="button"
+          onClick={onCancel}
+          className="px-8 py-3 rounded-xl border hover:bg-gray-100"
         >
           Cancel
         </button>
 
         <button
-          className="
-            px-8
-            py-3
-            rounded-xl
-            bg-[#3046D3]
-            text-white
-            hover:bg-[#253B80]
-          "
+          type="button"
+          onClick={onSave}
+          disabled={saving}
+          className="px-8 py-3 rounded-xl bg-[#3046D3] text-white hover:bg-[#253B80] disabled:opacity-50"
         >
-          Save Changes
+          {saving
+            ? "Saving..."
+            : "Save Changes"}
         </button>
-
       </div>
-
     </div>
   );
 }

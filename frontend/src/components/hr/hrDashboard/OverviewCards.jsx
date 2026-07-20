@@ -5,8 +5,6 @@ import {
   Award,
 } from "lucide-react";
 
-import { overviewData } from "./dashboardData";
-
 const icons = {
   users: Users,
   chart: BarChart3,
@@ -14,12 +12,44 @@ const icons = {
   award: Award,
 };
 
-export default function OverviewCards() {
+export default function OverviewCards({
+  analytics,
+  summary,
+}) {
+  const overviewData = [
+    {
+      title: "TOTAL EMPLOYEES",
+      value:
+        analytics?.totalEmployees ??
+        summary?.employees ??
+        0,
+      icon: "users",
+    },
+    {
+      title: "AVG. COMPLETION",
+      value:
+        analytics?.completionRate ??
+        `${summary?.completionRate ?? 0}%`,
+      icon: "chart",
+    },
+    {
+      title: "TOTAL COURSES",
+      value:
+        analytics?.totalCourses ??
+        summary?.courses ??
+        0,
+      icon: "book",
+    },
+    {
+      title: "CERTIFICATES ISSUED",
+      value: summary?.certificates ?? 0,
+      icon: "award",
+    },
+  ];
+
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6">
-
       {overviewData.map((item) => {
-
         const Icon = icons[item.icon];
 
         return (
@@ -27,20 +57,15 @@ export default function OverviewCards() {
             key={item.title}
             className="bg-white rounded-3xl shadow-sm p-6 border border-gray-100"
           >
-
             <div className="flex items-center gap-4">
-
               <div className="w-14 h-14 rounded-2xl bg-indigo-100 flex items-center justify-center">
-
                 <Icon
                   size={28}
                   className="text-[#2F3FE4]"
                 />
-
               </div>
 
               <div>
-
                 <p className="text-xs uppercase tracking-wide text-gray-500">
                   {item.title}
                 </p>
@@ -48,15 +73,11 @@ export default function OverviewCards() {
                 <h2 className="text-3xl font-bold mt-1 text-gray-800">
                   {item.value}
                 </h2>
-
               </div>
-
             </div>
-
           </div>
         );
       })}
-
     </div>
   );
 }

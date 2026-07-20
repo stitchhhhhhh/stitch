@@ -1,34 +1,36 @@
-export default function AddProgramCard() {
+export default function AddProgramCard({ onClick }) {
   return (
-    <div
+    <button
+      type="button"
+      onClick={onClick}
       className="
-      border-2
-      border-dashed
-      border-gray-300
-      rounded-3xl
-      flex
-      flex-col
-      items-center
-      justify-center
-      min-h-[420px]
-      hover:border-[#3948F2]
-      hover:bg-[#F7F8FF]
-      transition
-      cursor-pointer
-      "
-    >
-
-      <div
-        className="
-        w-20
-        h-20
-        rounded-full
-        bg-[#EEF2FF]
+        w-full
+        border-2
+        border-dashed
+        border-gray-300
+        rounded-3xl
         flex
+        flex-col
         items-center
         justify-center
-        text-5xl
-        text-[#3948F2]
+        min-h-[420px]
+        hover:border-[#3948F2]
+        hover:bg-[#F7F8FF]
+        transition
+        cursor-pointer
+      "
+    >
+      <div
+        className="
+          w-20
+          h-20
+          rounded-full
+          bg-[#EEF2FF]
+          flex
+          items-center
+          justify-center
+          text-5xl
+          text-[#3948F2]
         "
       >
         +
@@ -41,7 +43,6 @@ export default function AddProgramCard() {
       <p className="mt-3 text-center text-gray-500 px-10">
         Launch a new company-wide learning initiative.
       </p>
-
-    </div>
+    </button>
   );
 }

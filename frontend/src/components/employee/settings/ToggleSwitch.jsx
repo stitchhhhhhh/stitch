@@ -1,8 +1,10 @@
 export default function ToggleSwitch({
   enabled = false,
+  onClick,
 }) {
   return (
-    <div
+    <button
+      onClick={onClick}
       className={`
         w-12
         h-7
@@ -36,6 +38,6 @@ export default function ToggleSwitch({
         `}
       />
 
-    </div>
+    </button>
   );
 }

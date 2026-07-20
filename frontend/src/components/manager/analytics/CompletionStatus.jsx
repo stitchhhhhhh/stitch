@@ -13,33 +13,9 @@ ChartJS.register(
   Legend
 );
 
-const data = {
-  labels: [
-    "Completed",
-    "In Progress",
-    "Overdue",
-  ],
-
-  datasets: [
-    {
-      data: [42, 6, 2],
-
-      backgroundColor: [
-        "#4453F2",
-        "#7B87FF",
-        "#EF4444",
-      ],
-
-      borderWidth: 0,
-    },
-  ],
-};
-
 const options = {
   responsive: true,
-
   maintainAspectRatio: false,
-
   cutout: "70%",
 
   plugins: {
@@ -49,25 +25,55 @@ const options = {
   },
 };
 
-export default function CompletionStatus() {
+export default function CompletionStatus({
+  totalEnrollments = 0,
+  completedEnrollments = 0,
+}) {
+  const total = Number(totalEnrollments) || 0;
+  const completed = Number(completedEnrollments) || 0;
+  const inProgress = Math.max(total - completed, 0);
+
+  const data = {
+    labels: [
+      "Completed",
+      "In Progress",
+    ],
+
+    datasets: [
+      {
+        data: [
+          completed,
+          inProgress,
+        ],
+
+        backgroundColor: [
+          "#4453F2",
+          "#7B87FF",
+        ],
+
+        borderWidth: 0,
+      },
+    ],
+  };
+
   return (
     <div className="bg-white rounded-3xl shadow-sm p-6">
-
       <h2 className="text-xl font-bold text-[#253B80] mb-6">
-
         Completion Status
-
       </h2>
 
-      <div className="h-72">
-
-        <Doughnut
-          data={data}
-          options={options}
-        />
-
-      </div>
-
+      {total === 0 ? (
+        <div className="h-72 flex items-center justify-center text-gray-500">
+          No enrollment data available.
+        </div>
+      ) : (
+        <div className="h-72">
+          <Doughnut
+            data={data}
+            options={options}
+          />
+        </div>
+      )}
     </div>
   );
 }

@@ -1,10 +1,6 @@
-import {
-  rankings,
-} from "./leaderboardData";
-
 import BadgeGroup from "./BadgeGroup";
 
-export default function RankingTable() {
+export default function RankingTable({ rankings = [] }) {
   return (
     <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
 

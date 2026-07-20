@@ -35,6 +35,21 @@ router.post('/generate', authMiddleware, async (req, res) => {
       return res.status(400).json({ message: 'Kursus belum selesai 100%' })
     }
 
+const existingCertificate =
+  await prisma.certificate.findFirst({
+    where: {
+      user_id: userId,
+      course_id: parseInt(course_id)
+    }
+  })
+
+if (existingCertificate) {
+  return res.status(400).json({
+    message: 'Sertifikat sudah pernah dibuat',
+    certificate: existingCertificate
+  })
+}
+
     const course = await prisma.course.findUnique({ where: { id: parseInt(course_id) } })
     const user = await prisma.user.findUnique({ where: { id: userId } })
 
@@ -84,6 +99,25 @@ router.post('/generate', authMiddleware, async (req, res) => {
     })
 
     res.status(201).json(certificate)
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
+router.get('/recent', authMiddleware, async (req, res) => {
+  try {
+    const certificates = await prisma.certificate.findMany({
+      take: 10,
+      orderBy: {
+        issue_date: 'desc'
+      },
+      include: {
+        user: true,
+        course: true
+      }
+    })
+
+    res.json(certificates)
   } catch (err) {
     res.status(500).json({ message: err.message })
   }

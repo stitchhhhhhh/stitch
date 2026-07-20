@@ -1,6 +1,6 @@
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../../context/AuthContext";
-import { ROLES } from "../../mock/entitySchemas";
+import { ROLES } from "../../constants/roles";
 
 // Logo sidebar atas
 import companyLogo from "../../assets/company-logo.png";
