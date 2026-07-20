@@ -19,7 +19,9 @@ const requests = [
   },
 ];
 
-export default function RecentRequestsTable() {
+export default function RecentRequestsTable({
+  onViewAll,
+}) {
   return (
     <div className="bg-white rounded-3xl shadow-sm p-8">
 
@@ -29,7 +31,11 @@ export default function RecentRequestsTable() {
           Recent Course Requests
         </h2>
 
-        <button className="text-[#2F3FE4] font-semibold hover:underline">
+        <button
+          type="button"
+          onClick={onViewAll}
+          className="text-[#2F3FE4] font-semibold hover:underline"
+        >
           View All Requests
         </button>
 
@@ -76,13 +82,20 @@ export default function RecentRequestsTable() {
 
                   <div className="flex justify-center gap-3">
 
-                    <button className="bg-[#2F3FE4] text-white px-5 py-2 rounded-xl">
+                    <button
+                      type="button"
+                      className="bg-[#2F3FE4] text-white px-5 py-2 rounded-xl"
+                    >
                       Approve
                     </button>
 
-                    <button className="bg-gray-200 px-5 py-2 rounded-xl">
-                      Reject
-                    </button>
+                    <button
+  type="button"
+  onClick={onViewAll}
+  className="bg-gray-200 px-5 py-2 rounded-xl"
+>
+  Reject
+</button>
 
                   </div>
 

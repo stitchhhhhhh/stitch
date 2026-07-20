@@ -28,8 +28,8 @@ router.get('/', authMiddleware, async (req, res) => {
         trainer: {
           select: { id: true, full_name: true }
         },
-        materials: {
-          select: { id: true, material_title: true, material_type: true }
+	materials: {
+          select: { id: true, material_title: true, material_type: true, uploaded_date: true, file_url: true }
         },
         assessments: {
           select: { id: true, title: true }

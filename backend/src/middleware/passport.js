@@ -4,40 +4,69 @@ const { PrismaClient } = require('@prisma/client')
 
 const prisma = new PrismaClient()
 
-passport.use(new GoogleStrategy({
-  clientID: process.env.GOOGLE_CLIENT_ID,
-  clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-  callbackURL: 'http://localhost:3000/api/auth/google/callback'
-},
-async (accessToken, refreshToken, profile, done) => {
-  try {
-    const email = profile.emails[0].value
+passport.use(
+  new GoogleStrategy(
+    {
+      clientID: process.env.GOOGLE_CLIENT_ID,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      callbackURL: process.env.CALLBACK_URL
+    },
+    async (accessToken, refreshToken, profile, done) => {
+      try {
+        const email = profile.emails?.[0]?.value?.toLowerCase()
 
-    const user = await prisma.user.findUnique({
-      where: { email },
-      include: { role: true }
-    })
+        if (!email) {
+          return done(null, false, {
+            message: 'email_not_found'
+          })
+        }
 
-    if (!user) {
-      return done(null, false, { message: 'user_not_found' })
+        const user = await prisma.user.findUnique({
+          where: {
+            email
+          },
+          include: {
+            role: true,
+            department: true
+          }
+        })
+
+        if (!user) {
+          return done(null, false, {
+            message: 'user_not_found'
+          })
+        }
+
+        if (String(user.status).toLowerCase() !== 'active') {
+          return done(null, false, {
+            message: 'account_inactive'
+          })
+        }
+
+        return done(null, user)
+      } catch (err) {
+        return done(err)
+      }
     }
-
-    return done(null, user)
-  } catch (err) {
-    return done(err)
-  }
-}))
+  )
+)
 
 passport.serializeUser((user, done) => {
-  done(null, user.user_id)
+  done(null, user.id)
 })
 
-passport.deserializeUser(async (user_id, done) => {
+passport.deserializeUser(async (id, done) => {
   try {
     const user = await prisma.user.findUnique({
-      where: { user_id },
-      include: { role: true }
+      where: {
+        id: Number(id)
+      },
+      include: {
+        role: true,
+        department: true
+      }
     })
+
     done(null, user)
   } catch (err) {
     done(err)

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
-import { getCourseById, getCourseModules, getCourseInstructor, getLocalProgress, getMyCourses } from '../../services/courseService';
+import { getCourseById, getCourseModules, getLocalProgress, getMyCourses } from '../../services/courseService';
 import {
   Play, FileText, Presentation, HelpCircle,
   Download, ChevronRight, Lock, Clock, ArrowLeft
@@ -57,9 +57,7 @@ export default function CourseDetail() {
           }
         : null;
 
-      const instructorData = courseData.trainer_id
-        ? await getCourseInstructor(courseData.trainer_id)
-        : null;
+      const instructorData = courseData.trainer || null;
 
       setCourse(courseData);
       setModules(modulesData);
@@ -144,81 +142,46 @@ export default function CourseDetail() {
           </div>
 
           <div className="p-6">
-            {activeTab === 'Materials' && (
-              <div className="space-y-6">
-                {modules.length === 0 && (
-                  <p className="text-sm text-gray-400">No materials available yet.</p>
-                )}
-                {modules.map((mod) => (
-                  <div key={mod.module_id}>
-                    <div className="flex items-center justify-between mb-3">
-                      <h3 className="text-base font-bold text-gray-900">
-                        {mod.module_title}
-                      </h3>
-                      {mod.is_locked ? (
-                        <span className="flex items-center gap-1 text-xs text-gray-400 font-medium">
-                          <Lock size={13} /> Locked
-                        </span>
-                      ) : (
-                        <span className="text-xs text-gray-400">
-                          {mod.materials.length} Materials
-                        </span>
-                      )}
-                    </div>
+  {activeTab === 'Materials' && (
+    <div className="space-y-3">
+      {modules.length === 0 ? (
+        <p className="text-sm text-gray-400">
+          No materials available yet.
+        </p>
+      ) : (
+        modules.map((mat) => (
+          <a
+            key={mat.id}
+            href={mat.file_url}
+            target="_blank"
+            rel="noreferrer"
+            className="flex items-center gap-3 p-3 rounded-xl hover:bg-gray-50"
+          >
+            <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center">
+              <FileText size={16} />
+            </div>
 
-                    {mod.is_locked ? (
-                      <div className="flex flex-col items-center justify-center py-8 text-gray-400 bg-gray-50 rounded-xl">
-                        <Lock size={24} className="mb-2 opacity-40" />
-                        <p className="text-sm">Complete {modules[mod.order - 2]?.module_title ?? 'previous module'} to unlock advanced content</p>
-                      </div>
-                    ) : (
-                      <ul className="space-y-2">
-                        {mod.materials.map((mat) => {
-                          const Icon = MATERIAL_ICON[mat.material_type] ?? FileText;
-                          return (
-                            <li
-                              key={mat.material_id}
-                              onClick={() => {
-                                if (mat.material_type === 'quiz') {
-                                  navigate(`/employee/courses/${courseId}/assessment`);
-                                }
-                              }}
-                              className={`flex items-center gap-3 p-3 rounded-xl transition-colors group ${
-                                mat.material_type === 'quiz'
-                                  ? 'hover:bg-brand-50 cursor-pointer'
-                                  : 'hover:bg-gray-50 cursor-pointer'
-                              }`}
-                            >
-                              <div className="w-9 h-9 rounded-xl bg-brand-50 text-brand-600 flex items-center justify-center shrink-0">
-                                <Icon size={16} />
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <p className="text-sm font-semibold text-gray-800 truncate">
-                                  {mat.material_title}
-                                </p>
-                                <p className="text-xs text-gray-400">{MATERIAL_META(mat)}</p>
-                              </div>
-                              {mat.material_type === 'pdf' ? (
-                                <Download
-                                  size={16}
-                                  className="text-gray-300 group-hover:text-brand-500 transition-colors shrink-0"
-                                />
-                              ) : (
-                                <ChevronRight
-                                  size={16}
-                                  className="text-gray-300 group-hover:text-brand-500 transition-colors shrink-0"
-                                />
-                              )}
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
+            <div className="flex-1">
+              <p className="font-semibold">
+                {mat.material_title}
+              </p>
 
+              <p className="text-xs text-gray-400">
+                {mat.material_type}
+              </p>
+            </div>
+
+            <ChevronRight size={16} />
+          </a>
+        ))
+      )}
+    </div>
+  )}
+
+
+            
+    
+ 
             {activeTab === 'Assessment' && (
               <div className="flex flex-col items-center justify-center py-12 text-center text-gray-400">
                 <HelpCircle size={40} className="mb-3 opacity-30" />

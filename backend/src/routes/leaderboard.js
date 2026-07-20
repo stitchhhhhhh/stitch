@@ -13,6 +13,7 @@ router.get('/', authMiddleware, async (req, res) => {
       select: {
         id: true,
         full_name: true,
+        email: true,
         total_points: true,
         department: { select: { name: true } },
         role: { select: { name: true } }

@@ -1,142 +1,112 @@
-import {
-  Building2,
-  Users,
-  CheckCircle,
-} from "lucide-react";
+import { reviewProposal } from "../../../services/trainerService";
 
-export default function ProposalDetail() {
+export default function ProposalDetail({
+  proposal,
+  onRefresh,
+}) {
+  if (!proposal) {
+    return (
+      <div className="bg-white rounded-3xl p-10">
+        No proposal selected
+      </div>
+    );
+  }
+
+const handleReview = async (status) => {
+  if (!proposal) return;
+
+  const actionLabel =
+    status === "approved"
+      ? "approve"
+      : "reject";
+
+  const confirmed = window.confirm(
+    `Apakah kamu yakin ingin ${actionLabel} proposal "${proposal.proposal_title}"?`
+  );
+
+  if (!confirmed) return;
+
+  try {
+    await reviewProposal(
+      proposal.id,
+      status
+    );
+
+    alert(
+      status === "approved"
+        ? "Proposal berhasil disetujui."
+        : "Proposal berhasil ditolak."
+    );
+
+    if (onRefresh) {
+      await onRefresh();
+    }
+  } catch (err) {
+    console.error(err);
+
+    alert(
+      err?.message ||
+        "Gagal memperbarui proposal."
+    );
+  }
+};
+
   return (
-    <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
+    <div className="bg-white rounded-3xl shadow-sm p-8">
 
-      <div className="p-8 border-b">
+      <h2 className="text-4xl font-bold">
+        {proposal.proposal_title}
+      </h2>
 
-        <div className="flex justify-between">
+      <p className="text-gray-500 mt-3">
+        Submitted by {proposal.submitter?.full_name}
+      </p>
 
-          <div>
+      <div className="mt-8">
 
-            <h2 className="text-4xl font-bold">
-              Cloud Security Awareness Program
-            </h2>
+        <h3 className="font-bold mb-3">
+          Description
+        </h3>
 
-            <div className="flex items-center gap-3 mt-5">
-
-              <span className="bg-blue-100 text-[#2F3FE4] px-3 py-1 rounded-full text-sm">
-                IT Department
-              </span>
-
-              <span className="text-gray-500">
-                Submitted by John Smith
-              </span>
-
-            </div>
-
-          </div>
-
-          <div className="text-right">
-
-            <p className="text-xs text-gray-400 uppercase">
-              EST. PARTICIPANTS
-            </p>
-
-            <h1 className="text-5xl font-bold text-[#2F3FE4]">
-              240
-            </h1>
-
-          </div>
-
-        </div>
+        <p className="text-gray-600">
+          {proposal.description}
+        </p>
 
       </div>
 
-      <div className="p-8 space-y-8">
+      <div className="mt-8">
 
-        <div>
+        <span className="bg-blue-100 text-blue-700 px-4 py-2 rounded-full">
+          {proposal.status}
+        </span>
 
-          <h3 className="font-bold flex gap-2 items-center mb-4">
-            <Building2 size={18} />
-            Program Information
-          </h3>
+      </div>
 
-          <div className="bg-gray-50 rounded-xl p-5">
+      {proposal.status === "pending" && (
+        <div className="grid grid-cols-2 gap-4 mt-8">
 
-            <p className="font-semibold">Objective</p>
-
-            <p className="text-gray-600 mt-2">
-              Enhance organizational cybersecurity posture regarding cloud services.
-            </p>
-
-            <p className="font-semibold mt-6">
-              Description
-            </p>
-
-            <p className="text-gray-600 mt-2">
-              Comprehensive training covering AWS, Azure,
-              cloud security, IAM, compliance, and threat prevention.
-            </p>
-
-          </div>
-
-        </div>
-
-        <div className="grid grid-cols-2 gap-5">
-
-          <div className="bg-gray-50 rounded-xl p-5">
-
-            <h3 className="font-bold flex gap-2 items-center mb-4">
-              <Users size={18} />
-              Department Context
-            </h3>
-
-            <p className="text-4xl font-bold">
-              450 Employees
-            </p>
-
-            <p className="text-gray-500 mt-3">
-              Completion Rate
-            </p>
-
-            <div className="h-2 rounded-full bg-gray-200 mt-3">
-
-              <div className="w-[82%] h-2 rounded-full bg-[#2F3FE4]" />
-
-            </div>
-
-          </div>
-
-          <div className="bg-gray-50 rounded-xl p-5">
-
-            <h3 className="font-bold flex gap-2 items-center mb-4">
-              <CheckCircle size={18} />
-              Proposal Summary
-            </h3>
-
-            <ul className="space-y-3 text-gray-700">
-
-              <li>✔ Reduction in security incidents</li>
-
-              <li>✔ ISO 27001 Compliance</li>
-
-              <li>✔ Training goal 95% pass rate</li>
-
-            </ul>
-
-          </div>
-
-        </div>
-
-        <div className="grid grid-cols-2 gap-5 pt-4">
-
-          <button className="bg-[#2F3FE4] text-white rounded-xl py-4 text-lg hover:bg-[#2433c7]">
-            Approve Proposal
+          <button
+          type="button"
+            onClick={() =>
+              handleReview("approved")
+            }
+            className="bg-green-600 text-white py-3 rounded-xl"
+          >
+            Approve
           </button>
 
-          <button className="border border-red-500 text-red-600 rounded-xl py-4 text-lg hover:bg-red-50">
+          <button
+          type="button"
+            onClick={() =>
+              handleReview("rejected")
+            }
+            className="bg-red-600 text-white py-3 rounded-xl"
+          >
             Reject
           </button>
 
         </div>
-
-      </div>
+      )}
 
     </div>
   );
