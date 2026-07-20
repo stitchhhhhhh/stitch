@@ -159,72 +159,270 @@ router.put('/:id/submit', authMiddleware, roleMiddleware('TRAINER'), async (req,
 })
 
 // PUT — HR/Manager approve atau reject course
-router.put('/:id/approve', authMiddleware, roleMiddleware('HR', 'MANAGER'), async (req, res) => {
-  try {
-    const { status } = req.body // 'approved' atau 'rejected'
+// T-011 — HR/Manager review course
+router.put(
+  '/:id/approve',
+  authMiddleware,
+  roleMiddleware('HR', 'MANAGER'),
+  async (req, res) => {
+    try {
+      const courseId = Number(req.params.id)
+      const status = String(req.body.status || '').toLowerCase()
+      const reviewNote = String(req.body.review_note || '').trim()
 
-    const course = await prisma.course.update({
-      where: { id: parseInt(req.params.id) },
-      data: { approval_status: status }
-    })
+      if (!Number.isInteger(courseId)) {
+        return res.status(400).json({
+          message: 'ID course tidak valid'
+        })
+      }
 
-    // Kalau approved, auto-assign ke semua employee terkait
-    if (status === 'approved') {
-      const courseWithProgram = await prisma.course.findUnique({
-        where: { id: course.id },
-        select: {
-          course_title: true,
-          program: {
-            select: { program_type: true, department_id: true }
+      const allowedStatuses = [
+        'approved',
+        'rejected',
+        'revision'
+      ]
+
+      if (!allowedStatuses.includes(status)) {
+        return res.status(400).json({
+          message: 'Status review harus approved, rejected, atau revision'
+        })
+      }
+
+      const existingCourse = await prisma.course.findUnique({
+        where: {
+          id: courseId
+        },
+        include: {
+          program: true,
+          request: true,
+          trainer: {
+          },
+          materials: true,
+          assessments: {
+            include: {
+              questions: true
+            }
           }
         }
       })
 
-      let employees = []
-
-      if (courseWithProgram.program.program_type === 'GENERAL') {
-        // General → assign ke SEMUA employee
-        employees = await prisma.user.findMany({
-          where: { status: 'active' },
-          select: { id: true }
+      if (!existingCourse) {
+        return res.status(404).json({
+          message: 'Course tidak ditemukan'
         })
-      } else {
-        // Department → assign ke employee departemen terkait
-        employees = await prisma.user.findMany({
+      }
+
+      if (existingCourse.approval_status !== 'submitted') {
+        return res.status(400).json({
+          message: 'Hanya course berstatus submitted yang dapat direview'
+        })
+      }
+
+      if (
+        req.user.role === 'HR' &&
+        existingCourse.program.program_type !== 'GENERAL'
+      ) {
+        return res.status(403).json({
+          message: 'HR hanya dapat mereview General Course'
+        })
+      }
+
+      if (
+        req.user.role === 'MANAGER' &&
+        (
+          existingCourse.program.program_type !== 'DEPARTMENT' ||
+          existingCourse.program.department_id !== req.user.department_id
+        )
+      ) {
+        return res.status(403).json({
+          message: 'Manager hanya dapat mereview course departemennya'
+        })
+      }
+
+      if (status === 'approved') {
+        if (existingCourse.materials.length === 0) {
+          return res.status(400).json({
+            message: 'Course belum memiliki learning material'
+          })
+        }
+
+        if (existingCourse.assessments.length === 0) {
+          return res.status(400).json({
+            message: 'Course belum memiliki assessment'
+          })
+        }
+
+        const hasQuestion = existingCourse.assessments.some(
+          assessment => assessment.questions.length > 0
+        )
+
+        if (!hasQuestion) {
+          return res.status(400).json({
+            message: 'Assessment belum memiliki pertanyaan'
+          })
+        }
+      }
+
+      const result = await prisma.$transaction(async (tx) => {
+        const updatedCourse = await tx.course.update({
           where: {
-            department_id: courseWithProgram.program.department_id,
-            status: 'active'
+            id: courseId
           },
-          select: { id: true }
+          data: {
+            approval_status: status
+          }
         })
-      }
 
-      const enrollmentData = employees.map(emp => ({
-        user_id: emp.id,
-        course_id: course.id,
-        status: 'assigned'
-      }))
+        let enrolledEmployees = 0
 
-      if (enrollmentData.length > 0) {
-        await prisma.courseEnrollment.createMany({ data: enrollmentData })
-      }
+        if (status === 'approved') {
+          const employeeWhere = {
+            status: 'active',
+            role: {
+              name: {
+                equals: 'EMPLOYEE',
+                mode: 'insensitive'
+              }
+            }
+          }
 
-      // Kirim notifikasi ke semua employee yang di-assign
-      const notifData = employees.map(emp => ({
-        user_id: emp.id,
-        title: 'Kursus Baru',
-        message: `Anda telah ditugaskan kursus: ${courseWithProgram.course_title}`
-      }))
+          if (existingCourse.program.program_type === 'DEPARTMENT') {
+            employeeWhere.department_id =
+              existingCourse.program.department_id
+          }
 
-      if (notifData.length > 0) {
-        await prisma.notification.createMany({ data: notifData })
-      }
+          const employees = await tx.user.findMany({
+            where: employeeWhere,
+            select: {
+              id: true
+            }
+          })
+
+          if (employees.length > 0) {
+            const enrollmentData = employees.map(employee => ({
+              user_id: employee.id,
+              course_id: courseId,
+              status: 'assigned'
+            }))
+
+            const enrollmentResult =
+              await tx.courseEnrollment.createMany({
+                data: enrollmentData,
+                skipDuplicates: true
+              })
+
+            enrolledEmployees = enrollmentResult.count
+
+            await tx.notification.createMany({
+              data: employees.map(employee => ({
+                user_id: employee.id,
+                title: 'Kursus Baru',
+                message: `Anda telah ditugaskan kursus: ${existingCourse.course_title}`
+              }))
+            })
+          }
+
+          await tx.trainingProgram.update({
+            where: {
+              id: existingCourse.program_id
+            },
+            data: {
+              status: 'active'
+            }
+          })
+
+          if (existingCourse.request) {
+            await tx.courseRequest.update({
+              where: {
+                id: existingCourse.request.id
+              },
+              data: {
+                status: 'completed'
+              }
+            })
+          }
+        }
+
+        if (status === 'revision') {
+          await tx.trainingProgram.update({
+            where: {
+              id: existingCourse.program_id
+            },
+            data: {
+              status: 'course_in_progress'
+            }
+          })
+
+          if (existingCourse.request) {
+            await tx.courseRequest.update({
+              where: {
+                id: existingCourse.request.id
+              },
+              data: {
+                status: 'revision'
+              }
+            })
+          }
+        }
+
+        if (status === 'rejected') {
+          await tx.trainingProgram.update({
+            where: {
+              id: existingCourse.program_id
+            },
+            data: {
+              status: 'rejected'
+            }
+          })
+        }
+
+        await tx.notification.create({
+          data: {
+            user_id: existingCourse.trainer_id,
+            title: 'Hasil Review Course',
+            message:
+              status === 'approved'
+                ? `Course "${existingCourse.course_title}" telah disetujui.`
+                : status === 'revision'
+                  ? `Course "${existingCourse.course_title}" perlu direvisi.${reviewNote ? ` Catatan: ${reviewNote}` : ''}`
+                  : `Course "${existingCourse.course_title}" ditolak.${reviewNote ? ` Catatan: ${reviewNote}` : ''}`
+          }
+        })
+
+        await tx.auditLog.create({
+          data: {
+            user_id: req.user.user_id,
+            action: 'REVIEW_COURSE',
+            entity: 'Course',
+            entity_id: courseId,
+            description: `Course direview dengan status ${status}`
+          }
+        })
+
+        return {
+          course: updatedCourse,
+          enrolledEmployees
+        }
+      })
+
+      res.json({
+        message:
+          status === 'approved'
+            ? 'Course berhasil disetujui'
+            : status === 'revision'
+              ? 'Course dikembalikan untuk revisi'
+              : 'Course berhasil ditolak',
+        course: result.course,
+        enrolled_employees: result.enrolledEmployees
+      })
+    } catch (err) {
+      console.error('REVIEW COURSE ERROR:', err)
+
+      res.status(500).json({
+        message: 'Gagal mereview course'
+      })
     }
-
-    res.json(course)
-  } catch (err) {
-    res.status(500).json({ message: err.message })
   }
-})
+)
 
 module.exports = router

@@ -37,6 +37,21 @@ enum CourseApprovalStatus {
   rejected
 }
 
+enum ProgramType {
+  GENERAL
+  DEPARTMENT
+}
+
+enum ProgramStatus {
+  draft
+  requesting_course
+  course_in_progress
+  waiting_approval
+  active
+  rejected
+  completed
+}
+
 model Role {
   id    Int    @id @default(autoincrement()) @map("role_id")
   name  String @map("role_name")
@@ -51,6 +66,7 @@ model Department {
   description String?
   users       User[]
   programs    TrainingProgram[]
+  proposals   ProgramProposal[]
 
   @@map("departments")
 }
@@ -61,7 +77,7 @@ model User {
   department_id      Int
   full_name          String
   email              String  @unique
-  status             String  @default("active")
+  status             String  @default("draft")
   total_points       Int     @default(0)
   photo_url          String?
   notify_course      Boolean @default(true)
@@ -91,18 +107,18 @@ model User {
 model ProgramProposal {
   id             Int            @id @default(autoincrement()) @map("proposal_id")
   submitted_by   Int
-  department_id  Int
-  reviewed_by    Int?
+  department_id  Int?
+  approved_by    Int?
   proposal_title String
   description    String?
   status         ProposalStatus @default(pending)
   submitted_date DateTime       @default(now())
-  review_date    DateTime?
+  approval_date  DateTime?
   review_note    String?
 
-  submitter User       @relation("SubmittedBy", fields: [submitted_by], references: [id])
-  reviewer  User?      @relation("ApprovedBy", fields: [reviewed_by], references: [id])
-  department Department @relation(fields: [department_id], references: [id])
+  submitter  User        @relation("SubmittedBy", fields: [submitted_by], references: [id])
+  approver   User?       @relation("ApprovedBy", fields: [approved_by], references: [id])
+  department Department? @relation(fields: [department_id], references: [id])
 
   training_programs TrainingProgram[]
 
@@ -137,7 +153,7 @@ model TrainingProgram {
 model CourseRequest {
   id           Int           @id @default(autoincrement()) @map("request_id")
   program_id   Int
-  course_id    Int?
+  course_id    Int?          @unique
   requested_by Int
   trainer_id   Int
   request_date DateTime      @default(now())
@@ -157,7 +173,6 @@ model Course {
   id              Int                  @id @default(autoincrement()) @map("course_id")
   program_id      Int
   trainer_id      Int
-  assessment_id   Int?
   course_title    String
   description     String?
   approval_status CourseApprovalStatus @default(draft)
@@ -166,12 +181,11 @@ model Course {
 
   program      TrainingProgram    @relation(fields: [program_id], references: [id])
   trainer      User               @relation("TrainerCourse", fields: [trainer_id], references: [id])
-  assessment   Assessment?        @relation("CourseAssessment", fields: [assessment_id], references: [id])
   materials    LearningMaterial[]
-  assessments  Assessment[]       @relation("AssessmentCourse")
+  assessments  Assessment[]
   enrollments  CourseEnrollment[]
   certificates Certificate[]
-  requests     CourseRequest[]    @relation("CourseRequested")
+  request      CourseRequest?     @relation("CourseRequested")
 
   @@index([program_id])
   @@index([trainer_id])
@@ -186,7 +200,7 @@ model LearningMaterial {
   file_url       String
   uploaded_date  DateTime @default(now())
 
-  course Course @relation(fields: [course_id], references: [id])
+  course Course @relation(fields: [course_id], references: [id], onDelete: Cascade)
 
   @@index([course_id])
   @@map("learning_materials")
@@ -198,10 +212,10 @@ model Assessment {
   title         String
   passing_score Int    @default(70)
 
-  course        Course             @relation("AssessmentCourse", fields: [course_id], references: [id])
-  linked_course Course[]           @relation("CourseAssessment")
-  questions     Question[]
-  results       AssessmentResult[]
+  course Course @relation(fields: [course_id], references: [id], onDelete: Cascade)
+
+  questions Question[]
+  results   AssessmentResult[]
 
   @@index([course_id])
   @@map("assessments")
@@ -213,7 +227,7 @@ model Question {
   question_text  String
   correct_answer String
 
-  assessment Assessment @relation(fields: [assessment_id], references: [id])
+  assessment Assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade)
 
   @@index([assessment_id])
   @@map("questions")
@@ -228,7 +242,7 @@ model CourseEnrollment {
   status                EnrollmentStatus @default(assigned)
 
   user   User   @relation(fields: [user_id], references: [id])
-  course Course @relation(fields: [course_id], references: [id])
+  course Course @relation(fields: [course_id], references: [id], onDelete: Cascade)
 
   @@unique([user_id, course_id])
   @@index([user_id])
@@ -243,7 +257,7 @@ model AssessmentResult {
   score          Float
   completed_date DateTime @default(now())
 
-  assessment Assessment @relation(fields: [assessment_id], references: [id])
+  assessment Assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade)
   user       User       @relation(fields: [user_id], references: [id])
 
   @@unique([assessment_id, user_id])
@@ -275,7 +289,7 @@ model Certificate {
   issue_date         DateTime @default(now())
 
   user   User   @relation(fields: [user_id], references: [id])
-  course Course @relation(fields: [course_id], references: [id])
+  course Course @relation(fields: [course_id], references: [id], onDelete: Cascade)
 
   @@unique([user_id, course_id])
   @@index([user_id])
