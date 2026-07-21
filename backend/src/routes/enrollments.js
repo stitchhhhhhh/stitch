@@ -264,11 +264,11 @@ router.put('/:id/progress', authMiddleware, async (req, res) => {
     const normalizedPercentage = Math.round(percentage)
 
     const status =
-      normalizedPercentage >= 100
-        ? 'completed'
-        : normalizedPercentage > 0
-          ? 'in_progress'
-          : 'not_started'
+  normalizedPercentage >= 100
+    ? 'completed'
+    : normalizedPercentage > 0
+      ? 'in_progress'
+      : 'assigned'
 
     const updatedEnrollment =
       await prisma.courseEnrollment.update({

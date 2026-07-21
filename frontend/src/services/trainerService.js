@@ -3,34 +3,93 @@ function authHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-export async function getTrainerCourses(trainerId) {
-  const res = await fetch(`/api/courses/trainer/${trainerId}`, {
-    headers: authHeaders(),
-  });
-  if (!res.ok) throw new Error('Gagal mengambil data kursus');
+export async function getTrainerCourses() {
+  const res = await fetch(
+    '/api/courses/my-courses',
+    {
+      headers: authHeaders(),
+    }
+  );
+
+  if (!res.ok) {
+    const err =
+      await res.json().catch(() => ({}));
+
+    throw new Error(
+      err.message ||
+      'Gagal mengambil data kursus'
+    );
+  }
+
   return res.json();
 }
 
-export async function getTrainerCourseRequests(trainerId) {
-  const res = await fetch(`/api/course-requests/trainer/${trainerId}`, {
-    headers: authHeaders(),
-  });
-  if (!res.ok) throw new Error('Gagal mengambil data permintaan kursus');
+export async function getTrainerCourseRequests() {
+  const res = await fetch(
+    '/api/course-requests/my-requests',
+    {
+      headers: authHeaders(),
+    }
+  );
+
+  if (!res.ok) {
+    const err =
+      await res.json().catch(() => ({}));
+
+    throw new Error(
+      err.message ||
+      'Gagal mengambil data permintaan kursus'
+    );
+  }
+
   return res.json();
 }
 
-export async function updateCourseRequestStatus(requestId, status) {
-  const res = await fetch(`/api/course-requests/${requestId}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      ...authHeaders(),
-    },
-    body: JSON.stringify({ status }),
-  });
-  if (!res.ok) throw new Error('Gagal update status permintaan');
+export async function startCourseRequest(
+  requestId
+) {
+  const res = await fetch(
+    `/api/course-requests/${requestId}/start`,
+    {
+      method: 'PATCH',
+      headers: authHeaders(),
+    }
+  );
+
+  if (!res.ok) {
+    const err =
+      await res.json().catch(() => ({}));
+
+    throw new Error(
+      err.message ||
+      'Gagal memulai course request'
+    );
+  }
+
   return res.json();
 }
+
+export async function rejectCourseRequest(requestId) {
+  const res = await fetch(
+    `/api/course-requests/${requestId}/reject`,
+    {
+      method: "PATCH",
+      headers: authHeaders(),
+    }
+  );
+
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+
+    throw new Error(
+      err.message ||
+        "Gagal menolak course request"
+    );
+  }
+
+  return res.json();
+}
+
 
 export async function getPrograms() {
   const res = await fetch('/api/programs', {

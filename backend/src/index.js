@@ -7,6 +7,7 @@ require('dotenv').config()
 
 require('./middleware/passport')
 
+const materialProgressRoutes = require('./routes/materialProgress');
 const authRoutes = require('./routes/auth')
 const departmentRoutes = require('./routes/departments')
 const programRoutes = require('./routes/programs')
@@ -57,6 +58,7 @@ app.use(session({
 app.use(passport.initialize())
 app.use(passport.session())
 
+app.use('/api/material-progress', materialProgressRoutes);
 app.use('/api/auth', authRoutes)
 app.use('/api/departments', departmentRoutes)
 app.use('/api/programs', programRoutes)

@@ -4,7 +4,7 @@ import { useAuth } from "../../context/AuthContext";
 import {
   getTrainerCourses,
   getTrainerCourseRequests,
-  updateCourseRequestStatus,
+  startCourseRequest,
 } from "../../services/trainerService";
 
 import StatCard from "../../components/trainer/dashboard/StatCard";
@@ -27,15 +27,49 @@ export default function TrainerDashboard() {
   const [showUploadMaterial, setShowUploadMaterial] = useState(false);
 
   async function loadData() {
-    if (!trainerId) return;
-    const [coursesRes, requestsRes] = await Promise.all([
-      getTrainerCourses(trainerId),
-      getTrainerCourseRequests(trainerId),
-    ]);
-    setCourses(coursesRes);
-    setRequests(requestsRes);
+  if (!trainerId) {
+    setLoading(false);
+    return;
+  }
+
+  try {
+    setLoading(true);
+
+    const [coursesRes, requestsRes] =
+      await Promise.all([
+        getTrainerCourses(),
+        getTrainerCourseRequests(),
+      ]);
+
+    setCourses(
+      Array.isArray(coursesRes)
+        ? coursesRes
+        : coursesRes.data ??
+            coursesRes.courses ??
+            []
+    );
+
+    setRequests(
+      Array.isArray(requestsRes)
+        ? requestsRes
+        : requestsRes.data ??
+            requestsRes.requests ??
+            []
+    );
+  } catch (err) {
+    console.error(
+      "LOAD TRAINER DASHBOARD ERROR:",
+      err
+    );
+
+    alert(
+      err.message ||
+        "Gagal mengambil dashboard Trainer."
+    );
+  } finally {
     setLoading(false);
   }
+}
 
   useEffect(() => {
     loadData();
@@ -43,7 +77,7 @@ export default function TrainerDashboard() {
 
   async function handleAcceptRequest(requestId) {
     try {
-      await updateCourseRequestStatus(requestId, "accepted");
+      await startCourseRequest(requestId);
       await loadData();
     } catch (err) {
       alert(err.message);

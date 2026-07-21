@@ -79,3 +79,84 @@ export async function getCourses() {
     ? result
     : result.data ?? [];
 }
+
+export async function getManagerProposals() {
+  const res = await fetch(
+    "/api/proposals",
+    {
+      headers: authHeaders(),
+    }
+  );
+
+  const result = await res.json();
+
+  if (!res.ok) {
+    throw new Error(
+      result.message ||
+        "Failed to load manager proposals"
+    );
+  }
+
+  return Array.isArray(result)
+    ? result
+    : result.proposals ??
+        result.data ??
+        [];
+}
+
+export async function createManagerProposal(
+  data
+) {
+  const res = await fetch(
+    "/api/proposals",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/json",
+        ...authHeaders(),
+      },
+      body: JSON.stringify(data),
+    }
+  );
+
+  const result = await res.json();
+
+  if (!res.ok) {
+    throw new Error(
+      result.message ||
+        "Failed to create proposal"
+    );
+  }
+
+  return result;
+}
+
+export async function updateManagerProposal(
+  proposalId,
+  data
+) {
+  const res = await fetch(
+    `/api/proposals/${proposalId}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type":
+          "application/json",
+        ...authHeaders(),
+      },
+      body: JSON.stringify(data),
+    }
+  );
+
+  const result = await res.json();
+
+  if (!res.ok) {
+    throw new Error(
+      result.message ||
+        "Failed to update proposal"
+    );
+  }
+
+  return result;
+}

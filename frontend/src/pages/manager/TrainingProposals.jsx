@@ -5,9 +5,10 @@ import ProposalStatCard from "../../components/manager/proposals/ProposalStatCar
 import ProposalCard from "../../components/manager/proposals/ProposalCard";
 
 import {
-  getProposals,
-  createProposal,
-} from "../../services/trainerService";
+  getManagerProposals,
+  createManagerProposal,
+  updateManagerProposal,
+} from "../../services/managerService";
 
 export default function TrainingProposals() {
   const [proposals, setProposals] = useState([]);
@@ -21,7 +22,7 @@ const [editingProposalId, setEditingProposalId] = useState(null);
 
   const loadProposals = async () => {
     try {
-      const data = await getProposals();
+      const data = await getManagerProposals();
       setProposals(data);
     } catch (err) {
       console.error(err);
@@ -33,30 +34,66 @@ const [editingProposalId, setEditingProposalId] = useState(null);
   }, []);
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+  e.preventDefault();
 
-    try {
-      await createProposal(formData);
-
-      setFormData({
-        proposal_title: "",
-        description: "",
-      });
-
-      setShowForm(false);
-
-      await loadProposals();
-
-    } catch (err) {
-      alert(err.message);
+  try {
+    if (
+      !formData.proposal_title.trim()
+    ) {
+      alert(
+        "Proposal title wajib diisi."
+      );
+      return;
     }
-  };
+
+    if (editingProposalId) {
+      await updateManagerProposal(
+        editingProposalId,
+        formData
+      );
+
+      alert(
+        "Proposal berhasil diperbarui."
+      );
+    } else {
+      await createManagerProposal(
+        formData
+      );
+
+      alert(
+        "Proposal berhasil dibuat dan dikirim ke HR."
+      );
+    }
+
+    setFormData({
+      proposal_title: "",
+      description: "",
+    });
+
+    setEditingProposalId(null);
+    setShowForm(false);
+
+    await loadProposals();
+  } catch (err) {
+    alert(
+      err.message ||
+        "Gagal menyimpan proposal."
+    );
+  }
+};
 
 function handleView(proposal) {
   setSelectedProposal(proposal);
 }
 
 function handleEdit(proposal) {
+  if (proposal.status !== "pending") {
+    alert(
+      "Proposal yang sudah direview tidak dapat diedit."
+    );
+    return;
+  }
+
   setEditingProposalId(proposal.id);
 
   setFormData({
@@ -64,7 +101,9 @@ function handleEdit(proposal) {
       proposal.proposal_title ||
       proposal.title ||
       "",
-    description: proposal.description || "",
+
+    description:
+      proposal.description || "",
   });
 
   setShowForm(true);
@@ -75,51 +114,6 @@ function handleEdit(proposal) {
   });
 }
 
-function handleResubmit(proposal) {
-  const confirmed = window.confirm(
-    `Kirim ulang proposal "${
-      proposal.title || proposal.proposal_title
-    }"?`
-  );
-
-  if (!confirmed) return;
-
-  alert(
-    "Tombol Re-submit sudah aktif, tetapi endpoint backend untuk mengubah status belum tersedia."
-  );
-}
-
-function handleSubmitHR(proposal) {
-  const confirmed = window.confirm(
-    `Submit proposal "${
-      proposal.title || proposal.proposal_title
-    }" ke HR?`
-  );
-
-  if (!confirmed) return;
-
-  alert(
-    "Tombol Submit to HR sudah aktif, tetapi endpoint backend belum dihubungkan."
-  );
-}
-
-function handleDelete(proposal) {
-  const confirmed = window.confirm(
-    `Hapus draft "${
-      proposal.title || proposal.proposal_title
-    }"?`
-  );
-
-  if (!confirmed) return;
-
-  setProposals((current) =>
-    current.filter(
-      (item) => item.id !== proposal.id
-    )
-  );
-
-  alert("Draft dihapus dari tampilan.");
-}
   
   const stats = [
     {
@@ -281,32 +275,35 @@ function handleDelete(proposal) {
             className="border p-3 w-full mb-4"
           />
 
-          <button
-  type="submit"
-  className="bg-blue-600 text-white px-4 py-2 rounded"
->
-  {editingProposalId
-    ? "Save Changes"
-    : "Save Proposal"}
-</button>
+        <div className="flex gap-3">
+  <button
+    type="submit"
+    className="bg-blue-600 text-white px-4 py-2 rounded"
+  >
+    {editingProposalId
+      ? "Save Changes"
+      : "Save Proposal"}
+  </button>
+
+  <button
+    type="button"
+    onClick={() => {
+      setShowForm(false);
+      setEditingProposalId(null);
+
+      setFormData({
+        proposal_title: "",
+        description: "",
+      });
+    }}
+    className="border px-4 py-2 rounded"
+  >
+    Cancel
+  </button>
+</div>
         </form>
       )}
 
-<button
-  type="button"
-  onClick={() => {
-    setShowForm(false);
-    setEditingProposalId(null);
-
-    setFormData({
-      proposal_title: "",
-      description: "",
-    });
-  }}
-  className="ml-3 border px-4 py-2 rounded"
->
-  Cancel
-</button>
 
       <div className="grid grid-cols-4 gap-6">
         {stats.map((item) => (
@@ -347,9 +344,6 @@ function handleDelete(proposal) {
     }}
     onView={handleView}
     onEdit={handleEdit}
-    onResubmit={handleResubmit}
-    onDelete={handleDelete}
-    onSubmitHR={handleSubmitHR}
   />
 ))}
       </div>

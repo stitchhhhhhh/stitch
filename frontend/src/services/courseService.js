@@ -166,7 +166,7 @@ function normalizeEnrollment(enrollment = {}) {
 
       status:
         enrollment.status ??
-        'not_started',
+        'assigned',
 
       assigned_date:
         enrollment.assigned_date ??
@@ -180,7 +180,7 @@ function normalizeEnrollment(enrollment = {}) {
 
     status:
       enrollment.status ??
-      'not_started',
+      'assigned',
   };
 }
 
@@ -754,5 +754,89 @@ export async function updateEnrollmentProgress(
   return {
     ...response,
     success: true,
+  };
+}
+
+/**
+ * GET /api/material-progress/course/:courseId
+ *
+ * Mengambil material course beserta status selesai
+ * milik user yang sedang login.
+ */
+export async function getMaterialProgress(courseId) {
+  if (!courseId) {
+    throw new Error('Course ID tidak valid');
+  }
+
+  const data = await request(
+    `/api/material-progress/course/${courseId}`,
+    {},
+    'Gagal mengambil progress material'
+  );
+
+  return {
+    enrollment: data?.enrollment ?? null,
+
+    materials: Array.isArray(data?.materials)
+      ? data.materials.map((material) => ({
+          ...material,
+
+          id:
+            material.id ??
+            material.material_id,
+
+          material_id:
+            material.material_id ??
+            material.id,
+
+          completed:
+            Boolean(material.completed),
+
+          completed_at:
+            material.completed_at ??
+            null,
+        }))
+      : [],
+  };
+}
+
+/**
+ * PUT /api/material-progress/:materialId/complete
+ *
+ * Menandai satu material sebagai selesai.
+ * Backend akan menghitung ulang progress enrollment.
+ */
+export async function completeMaterial(materialId) {
+  if (!materialId) {
+    throw new Error('Material ID tidak valid');
+  }
+
+  const data = await request(
+    `/api/material-progress/${materialId}/complete`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    },
+    'Gagal menyelesaikan material'
+  );
+
+  return {
+    ...data,
+
+    success: true,
+
+    enrollment:
+      data?.enrollment ?? null,
+
+    material_progress:
+      data?.material_progress ?? null,
+
+    total_materials:
+      Number(data?.total_materials ?? 0),
+
+    completed_materials:
+      Number(data?.completed_materials ?? 0),
   };
 }

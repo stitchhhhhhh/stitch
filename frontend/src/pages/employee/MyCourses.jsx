@@ -7,18 +7,18 @@ import { Clock, BookOpen, CheckCircle2, ChevronRight } from 'lucide-react';
 const STATUS_STYLE = {
   completed: 'bg-green-50 text-green-600',
   in_progress: 'bg-brand-50 text-brand-600',
-  not_started: 'bg-gray-100 text-gray-500',
+  assigned: 'bg-gray-100 text-gray-500',
 };
 
 const STATUS_LABEL = {
   completed: 'Completed',
   in_progress: 'In Progress',
-  not_started: 'Not Started',
+  assigned: 'Not Started',
 };
 
 function CourseCard({ course, onClick }) {
   const progress = course.enrollment?.completion_percentage ?? 0;
-  const status = course.enrollment?.status ?? 'not_started';
+  const status = course.enrollment?.status ?? 'assigned';
 
   return (
     <div
@@ -97,125 +97,68 @@ export default function MyCourses() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    let isMounted = true;
+  let isMounted = true;
 
-    async function loadCourses() {
-      if (!userId) {
-        if (isMounted) {
-          setCourses([]);
-          setLoading(false);
-        }
-        return;
+  async function loadCourses() {
+    if (!userId) {
+      if (isMounted) {
+        setCourses([]);
+        setLoading(false);
       }
+      return;
+    }
 
-      try {
-        setLoading(true);
-        setError('');
+    try {
+      setLoading(true);
+      setError('');
 
-        const data = await Promise.race([
-  getMyCourses(userId),
-
-  new Promise((_, reject) =>
-    setTimeout(
-      () =>
-        reject(
-          new Error(
-            "Request courses terlalu lama. Silakan coba kembali."
+      const data = await Promise.race([
+        getMyCourses(userId),
+        new Promise((_, reject) =>
+          setTimeout(
+            () =>
+              reject(
+                new Error(
+                  'Request courses terlalu lama. Silakan coba kembali.'
+                )
+              ),
+            15000
           )
         ),
-      15000
-    )
-  ),
-]);
+      ]);
 
-        if (isMounted) {
-          setCourses(
-            Array.isArray(data) ? data : []
-          );
-        }
-      } catch (err) {
-        if (!isMounted) return;
+      if (isMounted) {
+        setCourses(Array.isArray(data) ? data : []);
+      }
+    } catch (err) {
+      if (!isMounted) return;
 
-        console.error('MY COURSES ERROR:', err);
+      console.error('MY COURSES ERROR:', err);
 
-        setError(
-          err?.message || 'Failed to load courses.'
-        );
+      setError(
+        err?.message || 'Failed to load courses.'
+      );
 
-        setCourses([]);
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+      setCourses([]);
+    } finally {
+      if (isMounted) {
+        setLoading(false);
       }
     }
-
-   async function loadCourses() {
-  if (!userId) {
-    if (isMounted) {
-      setCourses([]);
-      setLoading(false);
-    }
-    return;
   }
 
-  try {
-    setLoading(true);
-    setError("");
+    loadCourses();
 
-    console.log("Loading courses for user:", userId);
+  return () => {
+    isMounted = false;
+  };
+}, [userId]);
 
-    const data = await Promise.race([
-      getMyCourses(userId),
-
-      new Promise((_, reject) =>
-        setTimeout(
-          () =>
-            reject(
-              new Error(
-                "Request courses terlalu lama."
-              )
-            ),
-          15000
-        )
-      ),
-    ]);
-
-    console.log("MY COURSES RESPONSE:", data);
-
-    if (!isMounted) return;
-
-    setCourses(
-      Array.isArray(data) ? data : []
-    );
-  } catch (err) {
-    if (!isMounted) return;
-
-    console.error("MY COURSES ERROR:", err);
-
-    setError(
-      err?.message ||
-        "Failed to load courses."
-    );
-
-    setCourses([]);
-  } finally {
-    if (isMounted) {
-      setLoading(false);
-    }
-  }
-}
-
-    return () => {
-      isMounted = false;
-    };
-  }, [userId]);
-
-  const FILTERS = [
+const FILTERS = [
     { key: 'all', label: 'All Courses' },
     { key: 'in_progress', label: 'In Progress' },
     { key: 'completed', label: 'Completed' },
-    { key: 'not_started', label: 'Not Started' },
+    { key: 'assigned', label: 'Not Started' },
   ];
 
   const filtered =

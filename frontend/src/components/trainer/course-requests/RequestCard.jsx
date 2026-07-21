@@ -1,27 +1,22 @@
 import ProgressBar from "./ProgressBar";
 
-export default function RequestCard({ request, onView }) {
+export default function RequestCard({
+  request,
+  onView,
+}) {
   return (
     <div className="bg-white rounded-3xl shadow-sm p-6 hover:shadow-md transition">
-      <div className="flex justify-between items-start">
+      <div className="flex justify-between items-start gap-4">
         <div>
-          <div className="flex items-center gap-3">
-            <h2 className="text-xl font-bold text-[#253B80]">
-              {request.title}
-            </h2>
-
-            <span
-              className={`px-3 py-1 rounded-full text-xs font-semibold ${request.priorityColor}`}
-            >
-              {request.priority}
-            </span>
-          </div>
+          <h2 className="text-xl font-bold text-[#253B80]">
+            {request.title}
+          </h2>
 
           <div className="flex gap-3 mt-3 flex-wrap">
             <span
               className={`px-3 py-1 rounded-full text-xs font-medium ${request.statusColor}`}
             >
-              {request.status}
+              {request.statusLabel}
             </span>
 
             <span className="bg-gray-100 text-gray-700 px-3 py-1 rounded-full text-xs">
@@ -39,7 +34,7 @@ export default function RequestCard({ request, onView }) {
         </button>
       </div>
 
-      <div className="grid grid-cols-3 gap-6 mt-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
         <div>
           <p className="text-gray-500 text-sm">
             Requested By
@@ -66,7 +61,9 @@ export default function RequestCard({ request, onView }) {
           </p>
 
           <div className="mt-2">
-            <ProgressBar progress={request.progress} />
+            <ProgressBar
+              progress={request.progress}
+            />
           </div>
         </div>
       </div>
