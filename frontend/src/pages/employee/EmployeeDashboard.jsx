@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   getMyCourses,
@@ -21,8 +22,8 @@ import LearningActivityChart from '../../components/dashboard/LearningActivityCh
 
 export default function EmployeeDashboard() {
   const { user } = useAuth();
-  // Fallback ke mock user_id 1 selama alur auth belum sepenuhnya terhubung ke backend.
-  const userId = user?.user_id ?? 1;
+  const navigate = useNavigate();
+  const userId = user?.user_id;
 
   const [loading, setLoading] = useState(true);
   const [myCourses, setMyCourses] = useState([]);
@@ -32,13 +33,37 @@ export default function EmployeeDashboard() {
   const [leaderboard, setLeaderboard] = useState([]);
   const [activity, setActivity] = useState({ daily: [], weekly: [] });
   const [activityRange, setActivityRange] = useState('weekly');
+  const [error, setError] = useState('');
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadDashboard() {
-      const [coursesRes, recommendedRes, deadlinesRes, certificatesRes, leaderboardRes, activityRes] =
-        await Promise.all([
+      if (!userId) {
+        if (isMounted) {
+          setMyCourses([]);
+          setRecommended([]);
+          setDeadlines([]);
+          setCertificates([]);
+          setLeaderboard([]);
+          setActivity({ daily: [], weekly: [] });
+          setLoading(false);
+        }
+        return;
+      }
+
+      try {
+        setLoading(true);
+        setError('');
+
+        const [
+          coursesRes,
+          recommendedRes,
+          deadlinesRes,
+          certificatesRes,
+          leaderboardRes,
+          activityRes,
+        ] = await Promise.all([
           getMyCourses(userId),
           getRecommendedCourses(userId),
           getUpcomingDeadlines(userId),
@@ -47,15 +72,48 @@ export default function EmployeeDashboard() {
           getLearningActivity(),
         ]);
 
-      if (!isMounted) return;
+        if (!isMounted) return;
 
-      setMyCourses(coursesRes);
-      setRecommended(recommendedRes);
-      setDeadlines(deadlinesRes);
-      setCertificates(certificatesRes);
-      setLeaderboard(leaderboardRes);
-      setActivity(activityRes);
-      setLoading(false);
+        setMyCourses(
+          Array.isArray(coursesRes) ? coursesRes : []
+        );
+        setRecommended(
+          Array.isArray(recommendedRes) ? recommendedRes : []
+        );
+        setDeadlines(
+          Array.isArray(deadlinesRes) ? deadlinesRes : []
+        );
+        setCertificates(
+          Array.isArray(certificatesRes) ? certificatesRes : []
+        );
+        setLeaderboard(
+          Array.isArray(leaderboardRes) ? leaderboardRes : []
+        );
+        setActivity(
+          activityRes && typeof activityRes === 'object'
+            ? activityRes
+            : { daily: [], weekly: [] }
+        );
+      } catch (err) {
+        if (!isMounted) return;
+
+        console.error('EMPLOYEE DASHBOARD ERROR:', err);
+
+        setError(
+          err?.message || 'Failed to load dashboard.'
+        );
+
+        setMyCourses([]);
+        setRecommended([]);
+        setDeadlines([]);
+        setCertificates([]);
+        setLeaderboard([]);
+        setActivity({ daily: [], weekly: [] });
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
     }
 
     loadDashboard();
@@ -73,13 +131,32 @@ export default function EmployeeDashboard() {
     );
   }
 
+  if (error) {
+    return (
+      <div className="bg-red-50 border border-red-200 text-red-700 rounded-2xl p-6">
+        <h2 className="font-bold">
+          Dashboard could not be loaded
+        </h2>
+
+        <p className="text-sm mt-2">{error}</p>
+
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+
   const hasCourses = myCourses.length > 0;
   const currentCourse =
     myCourses.find((c) => c.enrollment?.status === 'in_progress') || myCourses[0];
 
   return (
     <div>
-      {/* Header */}
       <h1 className="text-3xl font-bold text-gray-900">Dashboard Overview</h1>
       <p className="mt-2 text-gray-500">
         Welcome back{user?.full_name ? `, ${user.full_name}` : ''}. Here's what's happening with
@@ -87,10 +164,8 @@ export default function EmployeeDashboard() {
       </p>
 
       {!hasCourses ? (
-        // ================= EMPTY STATE =================
         <div className="mt-8 grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-6">
 
-          {/* LEFT */}
           <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100">
             <img
               src={emptyPicture}
@@ -107,18 +182,10 @@ export default function EmployeeDashboard() {
               Please wait for HR or your Department Manager to assign training.
               In the meantime, feel free to explore our self-paced catalog.
             </p>
-
-            <div className="flex justify-center mt-8">
-              <button className="bg-brand-500 hover:bg-brand-600 text-white px-8 py-3 rounded-full font-medium transition">
-                Request Training →
-              </button>
-            </div>
           </div>
 
-          {/* RIGHT SIDE */}
           <div className="space-y-6">
 
-            {/* Notifications */}
             <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
               <div className="flex justify-between items-center mb-5">
                 <h3 className="text-xl font-bold text-gray-900">Notifications</h3>
@@ -138,7 +205,6 @@ export default function EmployeeDashboard() {
               </p>
             </div>
 
-            {/* Certificates */}
             <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
               <h3 className="text-xl font-bold text-gray-900 mb-5">Certificates</h3>
 
@@ -148,12 +214,14 @@ export default function EmployeeDashboard() {
                 Start learning to earn your first certificate
               </p>
 
-              <button className="text-brand-500 font-semibold mt-4 w-full">
+              <button
+                onClick={() => navigate('/employee/certificates')}
+                className="text-brand-500 font-semibold mt-4 w-full"
+              >
                 View available credentials
               </button>
             </div>
 
-            {/* Leaderboard */}
             <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
               <div className="flex justify-between items-center mb-5">
                 <h3 className="text-xl font-bold text-gray-900">Leaderboard</h3>
@@ -176,7 +244,6 @@ export default function EmployeeDashboard() {
           </div>
         </div>
       ) : (
-        // ================= FILLED STATE =================
         <div className="mt-8 space-y-6">
 
           <StatsOverview

@@ -7,6 +7,7 @@ require('dotenv').config()
 
 require('./middleware/passport')
 
+const materialProgressRoutes = require('./routes/materialProgress');
 const authRoutes = require('./routes/auth')
 const departmentRoutes = require('./routes/departments')
 const programRoutes = require('./routes/programs')
@@ -22,8 +23,11 @@ const leaderboardRoutes = require('./routes/leaderboard')
 const certificateRoutes = require('./routes/certificates')
 const analyticsRoutes = require('./routes/analytics')
 const reportRoutes = require('./routes/reports')
-
+const userRoutes = require('./routes/users')
+const dashboardRoutes = require('./routes/dashboard')
 const app = express()
+
+
 
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
@@ -54,6 +58,7 @@ app.use(session({
 app.use(passport.initialize())
 app.use(passport.session())
 
+app.use('/api/material-progress', materialProgressRoutes);
 app.use('/api/auth', authRoutes)
 app.use('/api/departments', departmentRoutes)
 app.use('/api/programs', programRoutes)
@@ -69,7 +74,8 @@ app.use('/api/leaderboard', leaderboardRoutes)
 app.use('/api/certificates', certificateRoutes)
 app.use('/api/analytics', analyticsRoutes)
 app.use('/api/reports', reportRoutes)
-
+app.use('/api/users', userRoutes)
+app.use('/api/dashboard', dashboardRoutes)
 app.get('/', (req, res) => {
   res.json({ message: 'LMS Backend Running!' })
 })
@@ -83,3 +89,18 @@ const PORT = process.env.PORT || 3000
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
+
+app.disable('etag');
+
+app.use((req, res, next) => {
+  if (req.path.startsWith('/api/')) {
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      Pragma: 'no-cache',
+      Expires: '0',
+      'Surrogate-Control': 'no-store',
+    });
+  }
+
+  next();
+});

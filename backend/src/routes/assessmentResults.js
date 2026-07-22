@@ -21,7 +21,22 @@ router.get('/user/:userId', authMiddleware, async (req, res) => {
 // POST — submit jawaban assessment
 router.post('/', authMiddleware, async (req, res) => {
   try {
-    const { assessment_id, answers } = req.body
+
+const { assessment_id, answers } = req.body
+
+const existingResult =
+  await prisma.assessmentResult.findFirst({
+    where: {
+      assessment_id: parseInt(assessment_id),
+      user_id: req.user.user_id
+    }
+  })
+
+if (existingResult) {
+  return res.status(400).json({
+    message: 'Assessment sudah pernah dikerjakan'
+  })
+}
     // answers = [{ question_id, answer_text }, ...]
 
     const assessment = await prisma.assessment.findUnique({
@@ -59,6 +74,25 @@ router.post('/', authMiddleware, async (req, res) => {
     }
 
     res.status(201).json({ result, score, passed: score >= assessment.passing_score })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
+router.get('/recent', authMiddleware, async (req, res) => {
+  try {
+    const results = await prisma.assessmentResult.findMany({
+      take: 10,
+      orderBy: {
+        completed_date: 'desc'
+      },
+      include: {
+        user: true,
+        assessment: true
+      }
+    })
+
+    res.json(results)
   } catch (err) {
     res.status(500).json({ message: err.message })
   }

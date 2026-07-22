@@ -3,10 +3,14 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
   getAssessmentByCourseId,
-  getQuestionsByAssessmentId,
   getCourseById,
-  updateCourseProgress,
+  getMyCourses,
+  updateEnrollmentProgress,
 } from '../../services/courseService';
+
+import {
+  generateCertificate,
+} from '../../services/userService';
 import { Clock, ChevronLeft, ChevronRight, Flag, HelpCircle, Send } from 'lucide-react';
 
 function formatTime(seconds) {
@@ -36,18 +40,16 @@ export default function AssessmentPage() {
   useEffect(() => {
     async function load() {
       const [assessmentData, courseData] = await Promise.all([
-        getAssessmentByCourseId(courseId),
-        getCourseById(courseId),
-      ]);
+  getAssessmentByCourseId(courseId),
+  getCourseById(courseId),
+]);
 
-      if (!assessmentData) return;
+if (!assessmentData) return;
 
-      const questionsData = await getQuestionsByAssessmentId(assessmentData.assessment_id);
-
-      setAssessment(assessmentData);
-      setCourse(courseData);
-      setQuestions(questionsData);
-      setTimeLeft(assessmentData.duration_minutes * 60);
+setAssessment(assessmentData);
+setCourse(courseData);
+setQuestions(assessmentData.questions || []);
+setTimeLeft((assessmentData.duration_minutes || 30) * 60);
       setLoading(false);
     }
     load();
@@ -89,8 +91,31 @@ export default function AssessmentPage() {
     // Kalau lulus → update progress ke 100% di localStorage
     // Nanti tinggal ganti updateCourseProgress jadi axios call ke backend
     if (passed) {
-      await updateCourseProgress(userId, Number(courseId), 100);
+
+  const myCourses =
+    await getMyCourses(userId);
+
+  const enrollment =
+    myCourses.find(
+      c => c.course_id === Number(courseId)
+    )?.enrollment;
+
+  if (enrollment) {
+
+    await updateEnrollmentProgress(
+      enrollment.enrollment_id,
+      100
+    );
+
+    try {
+      await generateCertificate(
+        Number(courseId)
+      );
+    } catch (err) {
+      console.error(err);
     }
+  }
+}
 
     setScore(finalScore);
     setSubmitted(true);
