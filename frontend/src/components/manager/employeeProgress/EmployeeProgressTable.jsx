@@ -1,99 +1,84 @@
 export default function EmployeeProgressTable({
-  employees,
+  employees = [],
 }) {
   return (
-    <div className="bg-white rounded-3xl shadow-sm overflow-hidden">
-
-      <table className="w-full">
-
+    <div className="bg-white rounded-3xl shadow-sm overflow-x-auto">
+      <table className="w-full min-w-[760px]">
         <thead className="bg-gray-50">
-
           <tr className="text-left">
-
-            <th className="p-5">Employee</th>
-
+            <th className="p-5">
+              Employee
+            </th>
             <th>Training</th>
-
             <th>Progress</th>
-
             <th>Score</th>
-
             <th>Status</th>
-
           </tr>
-
         </thead>
 
         <tbody>
-
-          {employees.map((emp) => (
-
-            <tr
-              key={emp.name}
-              className="border-t"
-            >
-
-              <td className="p-5">
-
-                <div>
-
+          {employees.length === 0 ? (
+            <tr>
+              <td
+                colSpan={5}
+                className="p-8 text-center text-gray-500"
+              >
+                No employee progress
+                found.
+              </td>
+            </tr>
+          ) : (
+            employees.map((employee) => (
+              <tr
+                key={employee.id}
+                className="border-t"
+              >
+                <td className="p-5">
                   <h3 className="font-semibold">
-                    {emp.name}
+                    {employee.name}
                   </h3>
 
                   <p className="text-sm text-gray-500">
-                    {emp.role}
+                    {employee.email}
                   </p>
+                </td>
 
-                </div>
+                <td>
+                  {employee.training}
+                </td>
 
-              </td>
+                <td className="w-64">
+                  <div className="flex items-center gap-3">
+                    <span className="text-sm min-w-10">
+                      {employee.progress}%
+                    </span>
 
-              <td>{emp.training}</td>
-
-              <td className="w-64">
-
-                <div className="flex items-center gap-3">
-
-                  <span className="text-sm">
-                    {emp.progress}%
-                  </span>
-
-                  <div className="flex-1 h-2 rounded bg-gray-200">
-
-                    <div
-                      className="bg-[#4453F2] h-2 rounded"
-                      style={{
-                        width: `${emp.progress}%`,
-                      }}
-                    />
-
+                    <div className="flex-1 h-2 rounded bg-gray-200">
+                      <div
+                        className="bg-[#4453F2] h-2 rounded"
+                        style={{
+                          width: `${employee.progress}%`,
+                        }}
+                      />
+                    </div>
                   </div>
+                </td>
 
-                </div>
+                <td>
+                  {employee.score ?? "—"}
+                </td>
 
-              </td>
-
-              <td>{emp.score}</td>
-
-              <td>
-
-                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs">
-
-                  {emp.status}
-
-                </span>
-
-              </td>
-
-            </tr>
-
-          ))}
-
+                <td>
+                  <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-xs">
+                    {employee.status ||
+                      "Unknown"}
+                  </span>
+                </td>
+              </tr>
+            ))
+          )}
         </tbody>
-
       </table>
-
     </div>
   );
 }

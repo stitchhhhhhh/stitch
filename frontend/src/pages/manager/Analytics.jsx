@@ -209,7 +209,9 @@ export default function Analytics() {
         </div>
 
         <div className="col-span-4">
-          <RecentActivities />
+          <RecentActivities
+  activities={assessmentResults}
+/>
         </div>
       </div>
     </div>
