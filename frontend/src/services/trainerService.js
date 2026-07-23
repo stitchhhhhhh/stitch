@@ -3,12 +3,19 @@ function authHeaders() {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
-export async function getTrainerCourses(trainerId) {
-  const res = await fetch(`/api/courses/trainer/${trainerId}`, {
+export async function getTrainerCourses() {
+  const res = await fetch('/api/courses/trainer/me', {
+    cache: 'no-store',
     headers: authHeaders(),
   });
-  if (!res.ok) throw new Error('Gagal mengambil data kursus');
-  return res.json();
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || 'Failed to retrieve trainer courses');
+  }
+
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
 }
 
 export async function getTrainerCourseRequests(trainerId) {
@@ -171,6 +178,146 @@ export async function reviewProposal(id, status) {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.message || 'Gagal review proposal');
+  }
+
+  return res.json();
+}
+
+export async function getNotifications() {
+  const res = await fetch('/api/notifications', {
+    cache: 'no-store',
+    headers: authHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || 'Gagal mengambil notifikasi');
+  }
+
+  const data = await res.json();
+  return Array.isArray(data) ? data : [];
+}
+
+export async function markNotificationAsRead(notificationId) {
+  const res = await fetch(`/api/notifications/${notificationId}/read`, {
+    method: 'PUT',
+    headers: authHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || 'Gagal menandai notifikasi');
+  }
+
+  return res.json();
+}
+
+export async function markAllNotificationsAsRead() {
+  const res = await fetch('/api/notifications/read-all', {
+    method: 'PUT',
+    headers: authHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(
+      error.message || 'Gagal menandai semua notifikasi'
+    );
+  }
+
+  return res.json();
+}
+
+export async function getCurrentTrainerProfile() {
+  const res = await fetch('/api/users/me', {
+    cache: 'no-store',
+    headers: authHeaders(),
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+
+    throw new Error(
+      error.message || 'Gagal mengambil profil trainer'
+    );
+  }
+
+  return res.json();
+}
+
+export async function updateTrainerProfile(fullName) {
+  const res = await fetch('/api/users/me', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeaders(),
+    },
+    body: JSON.stringify({
+      full_name: fullName,
+    }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+
+    throw new Error(
+      error.message || 'Gagal memperbarui profil trainer'
+    );
+  }
+
+  return res.json();
+}
+
+export async function updateTrainerNotifications({
+  notify_course,
+  notify_deadline,
+  notify_certificate,
+}) {
+  const res = await fetch('/api/users/me/notifications', {
+    method: 'PUT',
+    headers: {
+      'Content-Type': 'application/json',
+      ...authHeaders(),
+    },
+    body: JSON.stringify({
+      notify_course,
+      notify_deadline,
+      notify_certificate,
+    }),
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+
+    throw new Error(
+      error.message ||
+        'Gagal memperbarui preferensi notifikasi'
+    );
+  }
+
+  return res.json();
+}
+
+export async function uploadTrainerPhoto(file) {
+  if (!(file instanceof File)) {
+    throw new Error('File foto tidak valid');
+  }
+
+  const formData = new FormData();
+  formData.append('photo', file);
+
+  const res = await fetch('/api/users/me/photo', {
+    method: 'POST',
+    headers: authHeaders(),
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+
+    throw new Error(
+      error.message || 'Gagal mengunggah foto trainer'
+    );
   }
 
   return res.json();

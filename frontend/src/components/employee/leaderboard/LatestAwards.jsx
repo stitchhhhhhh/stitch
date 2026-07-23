@@ -1,74 +1,29 @@
-const awards = [
-  {
-    title: "Fast Learner",
-    icon: "⚡",
-    color: "bg-yellow-100",
-  },
-  {
-    title: "Perfect Streak",
-    icon: "🔥",
-    color: "bg-red-100",
-  },
-  {
-    title: "Top Performer",
-    icon: "🏆",
-    color: "bg-blue-100",
-  },
-];
-
 export default function LatestAwards() {
   return (
-    <div className="bg-white rounded-3xl shadow-sm p-8">
+    <section className="rounded-2xl border border-gray-200 bg-white p-6">
+      <h2 className="text-lg font-bold text-gray-900">
+        Latest Awards
+      </h2>
 
-      <div className="flex justify-between items-center">
+      <p className="mt-1 text-sm text-gray-500">
+        Recently unlocked achievements
+      </p>
 
-        <div>
-
-          <h2 className="text-2xl font-bold text-[#253B80]">
-            Latest Awards
-          </h2>
-
-          <p className="text-gray-500 mt-2">
-            Recently unlocked achievements
-          </p>
-
-        </div>
-
-      </div>
-
-      <div className="space-y-5 mt-8">
-
-        {awards.map((award) => (
-
-          <div
-            key={award.title}
-            className="flex items-center gap-5"
-          >
-
-            <div
-              className={`${award.color} w-14 h-14 rounded-2xl flex items-center justify-center text-2xl`}
-            >
-              {award.icon}
-            </div>
-
-            <div>
-
-              <h3 className="font-bold">
-                {award.title}
-              </h3>
-
-              <p className="text-gray-500 text-sm">
-                Achievement unlocked
-              </p>
-
-            </div>
-
+      <div className="flex min-h-[180px] items-center justify-center">
+        <div className="text-center">
+          <div className="text-3xl">
+            🏅
           </div>
 
-        ))}
+          <p className="mt-3 font-semibold text-gray-900">
+            No awards yet
+          </p>
 
+          <p className="mt-1 text-sm text-gray-500">
+            Complete courses to unlock achievements.
+          </p>
+        </div>
       </div>
-
-    </div>
+    </section>
   );
 }

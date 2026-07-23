@@ -2,12 +2,19 @@ export default function ActivityCard({
   activity,
   onPrimary,
   onSecondary,
+  updating = false,
 }) {
   return (
-    <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition">
-      <div className="flex justify-between items-start">
+    <div
+      className={`rounded-3xl border bg-white p-6 shadow-sm transition hover:shadow-md ${
+        activity.isRead
+          ? "border-gray-100 opacity-80"
+          : "border-blue-100"
+      }`}
+    >
+      <div className="flex items-start justify-between">
         <span
-          className={`px-3 py-1 rounded-full text-xs font-semibold ${activity.badgeColor}`}
+          className={`rounded-full px-3 py-1 text-xs font-semibold ${activity.badgeColor}`}
         >
           {activity.badge}
         </span>
@@ -22,16 +29,16 @@ export default function ActivityCard({
           {activity.title}
         </h3>
 
-        <p className="text-gray-500 mt-2">
+        <p className="mt-2 text-gray-500">
           {activity.subtitle}
         </p>
       </div>
 
-      <div className="flex gap-4 mt-6">
+      <div className="mt-6 flex gap-4">
         <button
           type="button"
           onClick={() => onPrimary(activity)}
-          className="px-5 py-2.5 rounded-xl bg-[#3046D3] text-white hover:bg-[#253B80] transition"
+          className="rounded-xl bg-[#3046D3] px-5 py-2.5 text-white transition hover:bg-[#253B80]"
         >
           {activity.primary}
         </button>
@@ -39,10 +46,13 @@ export default function ActivityCard({
         {activity.secondary && (
           <button
             type="button"
+            disabled={updating}
             onClick={() => onSecondary(activity)}
-            className="px-5 py-2.5 rounded-xl border hover:bg-gray-100 transition"
+            className="rounded-xl border px-5 py-2.5 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {activity.secondary}
+            {updating
+              ? "Processing..."
+              : activity.secondary}
           </button>
         )}
       </div>
