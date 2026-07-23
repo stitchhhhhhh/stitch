@@ -36,7 +36,7 @@ export async function loginWithEmail(email, password) {
   const data = await parseResponse(response);
 
   if (!response.ok) {
-    throw new Error(data.message || "Login gagal.");
+    throw new Error(data.message || "Failed to login.");
   }
 
   return data;
@@ -62,7 +62,7 @@ export async function fetchUserFromToken(token) {
   const data = await parseResponse(response);
 
   if (!response.ok) {
-    throw new Error(data.message || "Gagal mengambil user.");
+    throw new Error(data.message || "Failed to fetch user.");
   }
 
   return data;

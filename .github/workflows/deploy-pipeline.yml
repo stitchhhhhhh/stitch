@@ -1,14 +1,19 @@
 name: Deployment
+
 on:
   push:
-    branches: [main, develop]
+    branches:
+      - main
+      - develop
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
       - name: Set deploy path
         id: config
+        shell: bash
         run: |
           if [ "${{ github.ref_name }}" = "main" ]; then
             echo "path=/var/www/learningcompany-production/app" >> "$GITHUB_OUTPUT"
@@ -26,8 +31,22 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.SSH_PORT }}
           script: |
-            cd ${{ steps.config.outputs.path }}
-            bash deploy.sh
+            set -e
+
+            DEPLOY_PATH="${{ steps.config.outputs.path }}"
+            DEPLOY_BRANCH="${{ github.ref_name }}"
+
+            echo "Deploy path: $DEPLOY_PATH"
+            echo "Deploy branch: $DEPLOY_BRANCH"
+
+            if [ ! -f "$DEPLOY_PATH/deploy.sh" ]; then
+              echo "ERROR: $DEPLOY_PATH/deploy.sh tidak ditemukan"
+              ls -la "$DEPLOY_PATH" || true
+              exit 1
+            fi
+
+            bash "$DEPLOY_PATH/deploy.sh" "$DEPLOY_BRANCH"
 
       - name: Summary
-        run: echo "Deployed **${{ steps.config.outputs.env }}**"
+        run: |
+          echo "Deployed ${{ steps.config.outputs.env }} from branch ${{ github.ref_name }}"
