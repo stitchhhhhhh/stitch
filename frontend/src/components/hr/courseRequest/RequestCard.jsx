@@ -16,7 +16,7 @@ export default function RequestCard({ course, onApprove, onReject, onSelect }) {
           </h2>
 
           <p className="text-sm text-gray-500 mt-2">
-            Dibuat oleh{" "}
+            Created by{" "}
             <span className="font-medium text-gray-700">
               {course.trainer?.full_name ?? '-'}
             </span>
@@ -31,7 +31,7 @@ export default function RequestCard({ course, onApprove, onReject, onSelect }) {
       </div>
 
       <p className="text-gray-600 mt-5 leading-relaxed">
-        {course.description || 'Tidak ada deskripsi.'}
+        {course.description || 'No description available.'}
       </p>
 
       <div className="grid grid-cols-3 gap-4 mt-6">

@@ -43,7 +43,7 @@ export default function TrainerDashboard() {
 
   async function handleAcceptRequest(requestId) {
     try {
-      await updateCourseRequestStatus(requestId, "accepted");
+      await updateCourseRequestStatus(requestId, "in_progress");
       await loadData();
     } catch (err) {
       alert(err.message);

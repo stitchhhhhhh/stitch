@@ -28,7 +28,7 @@ export default function CourseCard({ course }) {
     <div className="bg-white rounded-3xl shadow-sm overflow-hidden hover:shadow-lg transition">
       <div className="relative">
         <img
-          src={course.image}
+          src={course.image || "/icon.jpeg"}
           alt={course.title}
           className="w-full h-48 object-cover"
         />
@@ -75,7 +75,7 @@ export default function CourseCard({ course }) {
               : "bg-[#3046D3] text-white hover:bg-[#253B80]"
           }`}
         >
-          {course.primaryButton}
+          {course.primaryButton || "View Course"}
         </button>
       </div>
     </div>

@@ -53,6 +53,46 @@ router.get('/', authMiddleware, async (req, res) => {
   }
 })
 
+// GET course milik trainer yang sedang login
+// Diletakkan sebelum route /:id agar path "trainer/me" tidak dianggap sebagai course ID.
+router.get('/trainer/me', authMiddleware, roleMiddleware('TRAINER'), async (req, res) => {
+  try {
+    const courses = await prisma.course.findMany({
+      where: { trainer_id: req.user.user_id },
+      orderBy: { created_date: 'desc' },
+      select: {
+        id: true,
+        course_title: true,
+        description: true,
+        approval_status: true,
+        deadline: true,
+        created_date: true,
+        program: {
+          select: {
+            id: true,
+            program_name: true,
+            program_type: true,
+            department: {
+              select: { id: true, name: true }
+            }
+          }
+        },
+        materials: {
+          select: { id: true }
+        },
+        assessments: {
+          select: { id: true }
+        }
+      }
+    })
+
+    res.json(courses)
+  } catch (err) {
+    console.error('GET TRAINER COURSES ERROR:', err)
+    res.status(500).json({ message: 'Failed to retrieve trainer courses' })
+  }
+})
+
 // GET course by id (optimized dengan select)
 router.get('/:id', authMiddleware, async (req, res) => {
   try {

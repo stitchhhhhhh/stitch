@@ -217,7 +217,7 @@ export default function App() {
             />
           </Route>
 
-          {/* ========================================================= */}
+                    {/* ========================================================= */}
           {/* TRAINER */}
           {/* ========================================================= */}
 
@@ -242,7 +242,9 @@ export default function App() {
 
             <Route
               path="curriculum"
-              element={<ComingSoon title="Curriculum Design Studio" />}
+              element={
+                <ComingSoon title="Curriculum Design Studio" />
+              }
             />
 
             <Route
@@ -257,7 +259,6 @@ export default function App() {
           </Route>
 
           {/* 404 */}
-
           <Route
             path="*"
             element={<Navigate to="/login" replace />}

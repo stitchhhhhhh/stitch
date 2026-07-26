@@ -34,7 +34,7 @@ export default function HRDashboard() {
       } catch (err) {
         setError(
           err.message ||
-          "Gagal mengambil data HR Dashboard"
+          "Failed to load the HR dashboard."
         );
       } finally {
         setLoading(false);

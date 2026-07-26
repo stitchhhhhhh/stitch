@@ -23,9 +23,9 @@ export default function Topbar() {
   }
 
   return (
-    <header className="h-20 bg-white border-b border-gray-200 px-8 flex items-center justify-between">
+    <header className="h-20 w-full shrink-0 bg-white border-b border-gray-200 px-4 sm:px-6 lg:px-8 flex items-center justify-between">
 
-      <div className="flex items-center bg-[#F4F6FF] rounded-full px-5 py-3 w-[700px] max-w-full">
+      <div className="min-w-0 flex-1 max-w-[700px] items-center bg-[#F4F6FF] rounded-full px-5 py-3 hidden sm:flex">
         <Search size={18} className="text-gray-400" />
         <input
           type="text"
@@ -34,7 +34,7 @@ export default function Topbar() {
         />
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className="ml-auto flex shrink-0 items-center gap-3 sm:gap-6">
         <button className="relative" onClick={handleNotificationClick}>
           <Bell size={20} className="text-brand-500" />
         </button>
@@ -42,7 +42,7 @@ export default function Topbar() {
         <div className="w-px h-10 bg-gray-200"></div>
 
         <div className="flex items-center gap-3">
-          <div className="text-right">
+          <div className="hidden text-right sm:block">
             <p className="text-sm font-semibold text-gray-800">
               {user?.full_name || 'User'}
             </p>

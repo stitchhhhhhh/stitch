@@ -1,17 +1,34 @@
-export default function ToggleSwitch({ enabled }) {
+export default function ToggleSwitch({
+  enabled,
+  onChange,
+  disabled = false,
+}) {
   return (
-    <div
+    <button
+      type="button"
+      onClick={() => {
+        if (!disabled) {
+          onChange?.(!enabled);
+        }
+      }}
+      disabled={disabled}
+      aria-pressed={enabled}
       className={`
         w-12
         h-7
         rounded-full
         relative
         transition
+        focus:outline-none
+        focus:ring-2
+        focus:ring-[#3046D3]
+        focus:ring-offset-2
 
         ${enabled ? "bg-[#3046D3]" : "bg-gray-300"}
+        ${disabled ? "cursor-not-allowed opacity-60" : "cursor-pointer"}
       `}
     >
-      <div
+      <span
         className={`
           absolute
           top-1
@@ -19,11 +36,11 @@ export default function ToggleSwitch({ enabled }) {
           h-5
           bg-white
           rounded-full
-          transition
+          transition-all
 
           ${enabled ? "left-6" : "left-1"}
         `}
       />
-    </div>
+    </button>
   );
 }

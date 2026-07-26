@@ -51,6 +51,7 @@ model Department {
   description String?
   users       User[]
   programs    TrainingProgram[]
+  proposals   ProgramProposal[]
 
   @@map("departments")
 }
@@ -100,8 +101,8 @@ model ProgramProposal {
   review_date    DateTime?
   review_note    String?
 
-  submitter User       @relation("SubmittedBy", fields: [submitted_by], references: [id])
-  reviewer  User?      @relation("ApprovedBy", fields: [reviewed_by], references: [id])
+  submitter  User       @relation("SubmittedBy", fields: [submitted_by], references: [id])
+  reviewer   User?      @relation("ApprovedBy", fields: [reviewed_by], references: [id])
   department Department @relation(fields: [department_id], references: [id])
 
   training_programs TrainingProgram[]
