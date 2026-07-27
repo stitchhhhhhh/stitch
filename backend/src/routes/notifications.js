@@ -37,7 +37,7 @@ router.put('/read-all', authMiddleware, async (req, res) => {
     })
 
     res.json({
-      message: 'Semua notifikasi ditandai sudah dibaca',
+      message: 'All notifications were marked as read.',
       updated_count: result.count
     })
   } catch (err) {
@@ -52,7 +52,7 @@ router.put('/:id/read', authMiddleware, async (req, res) => {
 
     if (Number.isNaN(notificationId)) {
       return res.status(400).json({
-        message: 'ID notifikasi tidak valid'
+        message: 'Invalid notification ID.'
       })
     }
 
@@ -68,7 +68,7 @@ router.put('/:id/read', authMiddleware, async (req, res) => {
 
     if (result.count === 0) {
       return res.status(404).json({
-        message: 'Notifikasi tidak ditemukan'
+        message: 'Notification not found.'
       })
     }
 

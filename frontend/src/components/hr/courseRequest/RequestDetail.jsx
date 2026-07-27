@@ -2,7 +2,7 @@ export default function RequestDetail({ course, onApprove, onReject }) {
   if (!course) {
     return (
       <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 sticky top-6 text-center text-gray-400">
-        Pilih kursus untuk melihat detail.
+        Select a course to view its details.
       </div>
     );
   }
@@ -25,7 +25,7 @@ export default function RequestDetail({ course, onApprove, onReject }) {
             {course.course_title}
           </h3>
           <p className="text-sm text-gray-500 mt-1">
-            Dibuat oleh {course.trainer?.full_name ?? '-'}
+            Created by {course.trainer?.full_name ?? '-'}
           </p>
         </div>
 
@@ -48,7 +48,7 @@ export default function RequestDetail({ course, onApprove, onReject }) {
           </div>
 
           <div>
-            <p className="text-gray-400">Dibuat</p>
+            <p className="text-gray-400">Created</p>
             <p className="font-medium mt-1">
               {new Date(course.created_date).toLocaleDateString('en-GB')}
             </p>
@@ -59,7 +59,7 @@ export default function RequestDetail({ course, onApprove, onReject }) {
       <div className="mt-8">
         <h4 className="font-semibold text-gray-900">Description</h4>
         <p className="text-sm text-gray-500 mt-2 leading-6">
-          {course.description || 'Tidak ada deskripsi.'}
+          {course.description || 'No description available.'}
         </p>
       </div>
 
@@ -86,7 +86,7 @@ export default function RequestDetail({ course, onApprove, onReject }) {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-gray-400 mt-2">Belum ada materi diunggah.</p>
+          <p className="text-sm text-gray-400 mt-2">No learning materials uploaded.</p>
         )}
       </div>
 
@@ -102,7 +102,7 @@ export default function RequestDetail({ course, onApprove, onReject }) {
             ))}
           </div>
         ) : (
-          <p className="text-sm text-gray-400 mt-2">Belum ada assessment.</p>
+          <p className="text-sm text-gray-400 mt-2">No assessments available.</p>
         )}
       </div>
 

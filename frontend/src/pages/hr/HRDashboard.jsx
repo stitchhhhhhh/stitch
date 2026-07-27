@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 import OverviewCards from "../../components/hr/hrDashboard/OverviewCards";
 import CompletionChart from "../../components/hr/hrDashboard/CompletionChart";
@@ -7,41 +8,48 @@ import DepartmentComparison from "../../components/hr/hrDashboard/DepartmentComp
 import RecentActivity from "../../components/hr/hrDashboard/RecentActivity";
 import RecentRequestsTable from "../../components/hr/hrDashboard/RecentRequestsTable";
 
-import { getCompanyAnalytics } from "../../services/hrService";
-import { getDashboardSummary } from "../../services/dashboardService";
-import { useNavigate } from "react-router-dom";
+import { getHROverview } from "../../services/hrService";
+
 export default function HRDashboard() {
   const navigate = useNavigate();
-  const [analytics, setAnalytics] = useState(null);
-  const [summary, setSummary] = useState(null);
+
+  const [overview, setOverview] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
+    let isMounted = true;
+
     async function loadDashboard() {
       try {
         setLoading(true);
         setError("");
 
-        const [analyticsData, summaryData] =
-          await Promise.all([
-            getCompanyAnalytics(),
-            getDashboardSummary(),
-          ]);
+        const data = await getHROverview();
 
-        setAnalytics(analyticsData);
-        setSummary(summaryData);
+        if (isMounted) {
+          setOverview(data);
+        }
       } catch (err) {
-        setError(
-          err.message ||
-          "Failed to load the HR dashboard."
-        );
+        if (isMounted) {
+          setError(
+            err instanceof Error
+              ? err.message
+              : "Failed to load the HR dashboard."
+          );
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     }
 
     loadDashboard();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   if (loading) {
@@ -55,10 +63,16 @@ export default function HRDashboard() {
   if (error) {
     return (
       <div className="bg-red-50 text-red-600 rounded-3xl p-8">
-        {error}
+        <p className="font-semibold">Unable to load the HR dashboard.</p>
+        <p className="mt-1 text-sm">{error}</p>
       </div>
     );
   }
+
+  const summary = overview?.summary ?? {};
+  const departments = overview?.departments ?? [];
+  const activities = overview?.recentActivities ?? [];
+  const requests = overview?.recentRequests ?? [];
 
   return (
     <div className="space-y-6">
@@ -68,56 +82,35 @@ export default function HRDashboard() {
         </h1>
 
         <p className="text-gray-500 mt-1">
-          Real-time learning metrics and workforce
-          development status.
+          Real-time learning metrics and workforce development status.
         </p>
       </div>
 
-      <OverviewCards
-        analytics={analytics}
-        summary={summary}
-      />
+      <OverviewCards summary={summary} />
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         <div className="xl:col-span-2">
           <CompletionChart
-  totalEnrollments={
-    analytics?.totalEnrollments ??
-    summary?.enrollments ??
-    0
-  }
-  completedEnrollments={
-    analytics?.completedEnrollments ??
-    summary?.completedEnrollments ??
-    0
-  }
-/>
+            totalEnrollments={summary.totalEnrollments ?? 0}
+            completedEnrollments={summary.completedEnrollments ?? 0}
+          />
         </div>
 
         <EngagementCard
-  completionRate={
-    analytics?.completionRate ??
-    summary?.completionRate ??
-    0
-  }
-  averageScore={
-    analytics?.averageAssessmentScore ??
-    summary?.averageScore ??
-    0
-  }
-/>
+          completionRate={summary.completionRate ?? 0}
+          averageScore={summary.averageAssessmentScore ?? 0}
+        />
       </div>
 
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
-        <DepartmentComparison />
-        <RecentActivity />
+        <DepartmentComparison departments={departments} />
+        <RecentActivity activities={activities} />
       </div>
 
       <RecentRequestsTable
-  onViewAll={() =>
-    navigate("/hr/course-requests")
-  }
-/>
+        requests={requests}
+        onViewAll={() => navigate("/hr/course-requests")}
+      />
     </div>
   );
 }

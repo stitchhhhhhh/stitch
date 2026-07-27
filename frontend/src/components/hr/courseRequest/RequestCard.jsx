@@ -78,7 +78,7 @@ export default function RequestCard({ course, onApprove, onReject, onSelect }) {
           </>
         ) : (
           <div className="flex-1 text-center text-sm text-gray-400 py-3">
-            Sudah direview
+            Already reviewed
           </div>
         )}
 

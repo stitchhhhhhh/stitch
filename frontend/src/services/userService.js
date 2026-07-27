@@ -14,7 +14,7 @@ export async function getCertificates(userId) {
     cache: "no-store",
     headers: authHeaders(),
   });
-  if (!res.ok) throw new Error('Gagal mengambil data sertifikat');
+  if (!res.ok) throw new Error('Failed to load certificates');
   const data = await res.json();
 
   // Terjemahkan bentuk API (course: {...}) ke bentuk lama yang dipakai komponen
@@ -42,7 +42,7 @@ export async function generateCertificate(courseId) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || 'Gagal generate sertifikat');
+    throw new Error(err.message || 'Failed to generate certificate');
   }
   return res.json();
 }
@@ -53,7 +53,7 @@ export async function getLeaderboard() {
     cache: "no-store",
     headers: authHeaders(),
   });
-  if (!res.ok) throw new Error('Gagal mengambil data leaderboard');
+  if (!res.ok) throw new Error('Failed to load leaderboard');
   const data = await res.json();
 
   return data.map((u) => ({
@@ -74,7 +74,7 @@ export async function getNotifications() {
   });
 
   if (!res.ok) {
-    throw new Error("Gagal mengambil notifikasi");
+    throw new Error("Failed to load notifications");
   }
 
   const data = await res.json();
@@ -104,7 +104,7 @@ export async function markNotificationRead(notificationId) {
     method: 'PUT',
     headers: authHeaders(),
   });
-  if (!res.ok) throw new Error('Gagal menandai notifikasi');
+  if (!res.ok) throw new Error('Failed to mark notification as read');
   return res.json();
 }
 
@@ -115,7 +115,7 @@ export async function markAllNotificationsRead() {
     method: 'PUT',
     headers: authHeaders(),
   });
-  if (!res.ok) throw new Error('Gagal menandai semua notifikasi');
+  if (!res.ok) throw new Error('Failed to mark all notifications as read');
   return res.json();
 }
 
@@ -125,7 +125,7 @@ export async function getMyProfile() {
     cache: "no-store",
     headers: authHeaders(),
   });
-  if (!res.ok) throw new Error('Gagal mengambil profil');
+  if (!res.ok) throw new Error('Failed to load profile');
   return res.json();
 }
 
@@ -142,7 +142,7 @@ export async function updateMyProfile(fullName) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || 'Gagal menyimpan profil');
+    throw new Error(err.message || 'Failed to save profile');
   }
   return res.json();
 }
@@ -160,7 +160,7 @@ export async function uploadProfilePhoto(file) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || 'Gagal upload foto');
+    throw new Error(err.message || 'Failed to upload profile photo');
   }
   return res.json();
 }
@@ -178,7 +178,7 @@ export async function updateNotificationPreferences(preferences) {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || 'Gagal menyimpan preferensi notifikasi');
+    throw new Error(err.message || 'Failed to save notification preferences');
   }
   return res.json();
 }

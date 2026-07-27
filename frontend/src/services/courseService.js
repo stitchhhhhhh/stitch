@@ -25,7 +25,7 @@ async function parseErrorResponse(response, fallbackMessage) {
   );
 }
 
-async function request(url, options = {}, fallbackMessage = 'Terjadi kesalahan') {
+async function request(url, options = {}, fallbackMessage = 'An unexpected error occurred') {
   const response = await fetch(url, {
   cache: 'no-store',
   ...options,
@@ -195,7 +195,7 @@ export async function getMyCourses(userId) {
   const data = await request(
     `/api/enrollments/user/${userId}`,
     {},
-    'Gagal mengambil course pengguna'
+    "Failed to load the user's courses"
   );
 
   if (!Array.isArray(data)) {
@@ -210,20 +210,20 @@ export async function getMyCourses(userId) {
  */
 export async function getCourseById(courseId) {
   if (!courseId) {
-    throw new Error('Course ID tidak valid');
+    throw new Error('Invalid course ID');
   }
 
   const data = await request(
     `/api/courses/${courseId}`,
     {},
-    'Gagal mengambil detail course'
+    'Failed to load course details'
   );
 
   return normalizeCourse(data);
 }
 
 /**
- * Backend saat ini belum menyediakan route khusus program.
+ * The backend does not currently provide a dedicated program route.
  *
  * Program diambil dari semua course kemudian dihilangkan duplikasinya.
  */
@@ -231,7 +231,7 @@ export async function getAllPrograms() {
   const response = await request(
     '/api/courses?page=1&limit=100',
     {},
-    'Gagal mengambil program'
+    'Failed to load training programs'
   );
 
   const courses = Array.isArray(response)
@@ -263,7 +263,7 @@ export async function getAllPrograms() {
 }
 
 /**
- * Course rekomendasi adalah course yang belum dimiliki user
+ * Recommended courses are courses the user has not enrolled in
  * dan berstatus approved.
  */
 export async function getRecommendedCourses(userId) {
@@ -272,7 +272,7 @@ export async function getRecommendedCourses(userId) {
       request(
         '/api/courses?page=1&limit=100',
         {},
-        'Gagal mengambil daftar course'
+        'Failed to load courses'
       ),
       userId
         ? getMyCourses(userId)
@@ -307,7 +307,7 @@ export async function getRecommendedCourses(userId) {
 
 /**
  * Deadline diambil dari enrollment pengguna,
- * hanya course yang belum selesai.
+ * and only include courses that have not been completed.
  */
 export async function getUpcomingDeadlines(userId) {
   const myCourses = await getMyCourses(userId);
@@ -332,7 +332,7 @@ export async function getUpcomingDeadlines(userId) {
 }
 
 /**
- * Backend belum mempunyai endpoint learning activity.
+ * The backend does not yet provide a learning activity endpoint.
  *
  * Data sementara dihitung dari enrollment pengguna.
  * Parameter userId dibuat opsional untuk menjaga kompatibilitas.
@@ -391,7 +391,7 @@ export async function getLearningActivity(userId) {
 }
 
 /**
- * Backend belum mempunyai tabel/route module.
+ * The backend does not yet provide a module table or route.
  *
  * Material course digunakan sebagai module agar komponen lama
  * tetap dapat menampilkan isi pembelajaran.
@@ -463,7 +463,7 @@ export async function getCourseInstructor(trainerId) {
   const response = await request(
     '/api/courses?page=1&limit=100',
     {},
-    'Gagal mengambil data trainer'
+    'Failed to load trainer data'
   );
 
   const courses = Array.isArray(response)
@@ -509,7 +509,7 @@ export async function getAssessmentByCourseId(courseId) {
   const data = await request(
     `/api/assessments/course/${courseId}`,
     {},
-    'Gagal mengambil assessment'
+    'Failed to load assessment'
   );
 
   if (!Array.isArray(data) || data.length === 0) {
@@ -549,7 +549,7 @@ export async function getQuestionsByAssessmentId(
   const assessment = await request(
     `/api/assessments/${assessmentId}`,
     {},
-    'Gagal mengambil pertanyaan assessment'
+    'Failed to load assessment questions'
   );
 
   const questions = Array.isArray(
@@ -577,6 +577,61 @@ export async function getQuestionsByAssessmentId(
 }
 
 /**
+ * POST /api/assessment-results
+ *
+ * Sends assessment answers to the backend.
+ * The backend calculates the score, determines the result,
+ * and stores the assessment result in the database.
+ */
+export async function submitAssessmentResult(
+  assessmentId,
+  answers
+) {
+  const normalizedAssessmentId = Number(assessmentId);
+
+  if (
+    !Number.isInteger(normalizedAssessmentId) ||
+    normalizedAssessmentId <= 0
+  ) {
+    throw new Error('Invalid assessment ID');
+  }
+
+  if (!Array.isArray(answers)) {
+    throw new Error('Assessment answers must be an array');
+  }
+
+  const normalizedAnswers = answers
+    .map((answer) => ({
+      question_id: Number(answer.question_id),
+      answer_text:
+        answer.answer_text === undefined ||
+        answer.answer_text === null
+          ? ''
+          : String(answer.answer_text),
+    }))
+    .filter(
+      (answer) =>
+        Number.isInteger(answer.question_id) &&
+        answer.question_id > 0
+    );
+
+  return request(
+  '/api/assessment-results',
+    {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        assessment_id: normalizedAssessmentId,
+        answers: normalizedAnswers,
+      }),
+    },
+    'Failed to submit assessment'
+  );
+}
+
+/**
  * PUT /api/enrollments/:id/progress
  *
  * Signature dipertahankan:
@@ -591,11 +646,11 @@ export async function updateCourseProgress(
   percentage
 ) {
   if (!userId) {
-    throw new Error('User ID tidak valid');
+    throw new Error('Invalid user ID');
   }
 
   if (!courseId) {
-    throw new Error('Course ID tidak valid');
+    throw new Error('Invalid course ID');
   }
 
   const normalizedPercentage =
@@ -607,8 +662,8 @@ export async function updateCourseProgress(
     normalizedPercentage > 100
   ) {
     throw new Error(
-      'Progress harus berada antara 0 sampai 100'
-    );
+  'Progress must be between 0 and 100'
+);
   }
 
   const myCourses = await getMyCourses(userId);
@@ -626,8 +681,8 @@ export async function updateCourseProgress(
 
   if (!enrollmentId) {
     throw new Error(
-      'Enrollment untuk course ini tidak ditemukan'
-    );
+  'Enrollment for this course was not found'
+);
   }
 
   const updatedEnrollment = await request(
@@ -642,7 +697,7 @@ export async function updateCourseProgress(
           normalizedPercentage,
       }),
     },
-    'Gagal memperbarui progress'
+    'Failed to update learning progress'
   );
 
   localStorage.setItem(
@@ -708,7 +763,7 @@ export async function getLocalProgress(
     }
   } catch (error) {
     console.warn(
-      'Gagal mengambil progress dari backend:',
+      'Failed to load progress from the backend:',
       error
     );
   }
@@ -734,7 +789,7 @@ export async function updateEnrollmentProgress(
   completionPercentage
 ) {
   if (!enrollmentId) {
-    throw new Error("Enrollment ID tidak valid");
+    throw new Error("Invalid enrollment ID");
   }
 
   const response = await request(
@@ -748,7 +803,7 @@ export async function updateEnrollmentProgress(
         completion_percentage: completionPercentage,
       }),
     },
-    "Gagal memperbarui progress"
+    "Failed to update learning progress"
   );
 
   return {

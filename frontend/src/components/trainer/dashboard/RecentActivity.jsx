@@ -50,7 +50,7 @@ export default function RecentActivity({ courses = [], materials = [] }) {
       </div>
 
       {activities.length === 0 ? (
-        <p className="text-gray-400 text-sm">Belum ada aktivitas.</p>
+        <p className="text-gray-400 text-sm">No recent activity.</p>
       ) : (
         <div className="space-y-6">
           {activities.map((item) => (

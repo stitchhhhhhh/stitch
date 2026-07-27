@@ -7,11 +7,298 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model Role {
+  id    Int    @id @default(autoincrement()) @map("role_id")
+  name  String @unique @map("role_name")
+  users User[]
+
+  @@map("roles")
+}
+
+model Department {
+  id          Int               @id @default(autoincrement()) @map("department_id")
+  name        String            @unique @map("department_name")
+  description String?
+  proposals   ProgramProposal[]
+  programs    TrainingProgram[]
+  users       User[]
+
+  @@map("departments")
+}
+
+model User {
+  id                              Int                @id @default(autoincrement()) @map("user_id")
+  role_id                         Int
+  department_id                   Int
+  full_name                       String
+  email                           String             @unique
+  status                          String             @default("active")
+  total_points                    Int                @default(0)
+  photo_url                       String?
+  notify_certificate              Boolean            @default(false)
+  notify_course                   Boolean            @default(true)
+  notify_deadline                 Boolean            @default(true)
+  default_report_format           String             @default("pdf")
+  report_include_department_stats Boolean            @default(true)
+  report_include_employee_details Boolean            @default(true)
+  password_hash                   String?
+  assessment_results              AssessmentResult[]
+  audit_logs                      AuditLog[]
+  certificates                    Certificate[]
+  enrollments                     CourseEnrollment[]
+  course_requests_made            CourseRequest[]    @relation("RequestedBy")
+  course_requests_assigned        CourseRequest[]    @relation("TrainerOf")
+  trained_courses                 Course[]           @relation("TrainerCourse")
+  material_progress               MaterialProgress[]
+  notifications                   Notification[]
+  approved_proposals              ProgramProposal[]  @relation("ApprovedBy")
+  submitted_proposals             ProgramProposal[]  @relation("SubmittedBy")
+  created_programs                TrainingProgram[]  @relation("CreatedBy")
+  department                      Department         @relation(fields: [department_id], references: [id])
+  role                            Role               @relation(fields: [role_id], references: [id])
+  user_badges                     UserBadge[]
+
+  @@index([role_id])
+  @@index([department_id])
+  @@index([status])
+  @@map("users")
+}
+
+model ProgramProposal {
+  id                Int               @id @default(autoincrement()) @map("proposal_id")
+  submitted_by      Int
+  approved_by       Int?
+  proposal_title    String
+  description       String?
+  submitted_date    DateTime          @default(now())
+  approval_date     DateTime?
+  status            ProposalStatus    @default(pending)
+  department_id     Int?
+  review_note       String?
+  approver          User?             @relation("ApprovedBy", fields: [approved_by], references: [id])
+  department        Department?       @relation(fields: [department_id], references: [id])
+  submitter         User              @relation("SubmittedBy", fields: [submitted_by], references: [id])
+  training_programs TrainingProgram[]
+
+  @@index([submitted_by])
+  @@index([department_id])
+  @@index([status])
+  @@map("program_proposals")
+}
+
+model TrainingProgram {
+  id            Int              @id @default(autoincrement()) @map("program_id")
+  proposal_id   Int?
+  department_id Int?
+  created_by    Int
+  program_name  String
+  description   String?
+  program_type  ProgramType
+  status        ProgramStatus    @default(draft)
+  created_date  DateTime         @default(now())
+  requests      CourseRequest[]
+  courses       Course[]
+  creator       User             @relation("CreatedBy", fields: [created_by], references: [id])
+  department    Department?      @relation(fields: [department_id], references: [id])
+  proposal      ProgramProposal? @relation(fields: [proposal_id], references: [id])
+
+  @@index([proposal_id])
+  @@index([department_id])
+  @@index([created_by])
+  @@index([program_type])
+  @@index([status])
+  @@map("training_programs")
+}
+
+model CourseRequest {
+  id           Int           @id @default(autoincrement()) @map("request_id")
+  program_id   Int
+  requested_by Int
+  trainer_id   Int
+  request_date DateTime      @default(now())
+  course_id    Int?          @unique
+  status       RequestStatus @default(pending)
+
+  course    Course?         @relation("CourseRequested", fields: [course_id], references: [id])
+  program   TrainingProgram @relation(fields: [program_id], references: [id])
+  requester User            @relation("RequestedBy", fields: [requested_by], references: [id])
+  trainer   User            @relation("TrainerOf", fields: [trainer_id], references: [id])
+
+  @@index([program_id])
+  @@index([requested_by])
+  @@index([trainer_id])
+  @@index([status])
+  @@map("course_requests")
+}
+
+model Course {
+  id              Int                  @id @default(autoincrement()) @map("course_id")
+  program_id      Int
+  trainer_id      Int
+  course_title    String
+  description     String?
+  deadline        DateTime?
+  created_date    DateTime             @default(now())
+  approval_status CourseApprovalStatus @default(draft)
+
+  assessments  Assessment[]
+  certificates Certificate[]
+  enrollments  CourseEnrollment[]
+  requests     CourseRequest?     @relation("CourseRequested")
+
+  program   TrainingProgram    @relation(fields: [program_id], references: [id])
+  trainer   User               @relation("TrainerCourse", fields: [trainer_id], references: [id])
+  materials LearningMaterial[]
+
+  @@index([program_id])
+  @@index([trainer_id])
+  @@index([approval_status])
+  @@index([deadline])
+  @@map("courses")
+}
+
+model LearningMaterial {
+  id             Int                @id @default(autoincrement()) @map("material_id")
+  course_id      Int
+  material_title String
+  material_type  String
+  file_url       String
+  uploaded_date  DateTime           @default(now())
+  course         Course             @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  progress       MaterialProgress[]
+
+  @@index([course_id])
+  @@map("learning_materials")
+}
+
+model Assessment {
+  id            Int                @id @default(autoincrement()) @map("assessment_id")
+  course_id     Int
+  title         String
+  passing_score Int                @default(70)
+  results       AssessmentResult[]
+  course        Course             @relation(fields: [course_id], references: [id], onDelete: Cascade)
+
+  questions Question[]
+
+  @@index([course_id])
+  @@map("assessments")
+}
+
+model Question {
+  id             Int     @id @default(autoincrement()) @map("question_id")
+  assessment_id  Int
+  question_text  String
+  correct_answer String?
+
+  assessment Assessment       @relation(fields: [assessment_id], references: [id], onDelete: Cascade)
+  options    QuestionOption[]
+
+  @@index([assessment_id])
+  @@map("questions")
+}
+
+model CourseEnrollment {
+  id                    Int              @id @default(autoincrement()) @map("enrollment_id")
+  user_id               Int
+  course_id             Int
+  assigned_date         DateTime         @default(now())
+  completion_percentage Int              @default(0)
+  status                EnrollmentStatus @default(assigned)
+  course                Course           @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  user                  User             @relation(fields: [user_id], references: [id])
+
+  @@unique([user_id, course_id])
+  @@index([user_id])
+  @@index([course_id])
+  @@index([status])
+  @@map("course_enrollments")
+}
+
+model MaterialProgress {
+  material_progress_id Int       @id @default(autoincrement())
+  user_id              Int
+  material_id          Int
+  completed            Boolean   @default(false)
+  completed_at         DateTime?
+  created_date         DateTime  @default(now())
+  updated_date         DateTime  @default(now()) @updatedAt
+
+  material LearningMaterial @relation(fields: [material_id], references: [id], onDelete: Cascade)
+  user     User             @relation(fields: [user_id], references: [id], onDelete: Cascade)
+
+  @@unique([user_id, material_id])
+  @@index([material_id])
+  @@index([user_id])
+  @@index([completed])
+  @@map("material_progress")
+}
+
+model AssessmentResult {
+  id             Int        @id @default(autoincrement()) @map("result_id")
+  assessment_id  Int
+  user_id        Int
+  score          Float
+  completed_date DateTime   @default(now())
+  assessment     Assessment @relation(fields: [assessment_id], references: [id], onDelete: Cascade)
+  user           User       @relation(fields: [user_id], references: [id])
+
+  @@unique([assessment_id, user_id])
+  @@index([assessment_id])
+  @@index([user_id])
+  @@map("assessment_results")
+}
+
+model Notification {
+  id           Int      @id @default(autoincrement()) @map("notification_id")
+  user_id      Int
+  title        String
+  message      String
+  is_read      Boolean  @default(false)
+  created_date DateTime @default(now())
+  user         User     @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@index([is_read])
+  @@index([created_date])
+  @@map("notifications")
+}
+
+model Certificate {
+  id                 Int      @id @default(autoincrement()) @map("certificate_id")
+  user_id            Int
+  course_id          Int
+  certificate_number String   @unique
+  issue_date         DateTime @default(now())
+  file_url           String?
+  course             Course   @relation(fields: [course_id], references: [id], onDelete: Cascade)
+  user               User     @relation(fields: [user_id], references: [id])
+
+  @@unique([user_id, course_id])
+  @@index([user_id])
+  @@index([course_id])
+  @@map("certificates")
+}
+
+model AuditLog {
+  id           Int      @id @default(autoincrement())
+  user_id      Int?
+  action       String
+  entity       String
+  entity_id    Int?
+  description  String?
+  created_date DateTime @default(now())
+  user         User?    @relation(fields: [user_id], references: [id])
+
+  @@index([user_id])
+  @@map("audit_logs")
+}
+
 enum ProposalStatus {
   pending
-  revision
   approved
   rejected
+  revision
 }
 
 enum RequestStatus {
@@ -37,264 +324,58 @@ enum CourseApprovalStatus {
   rejected
 }
 
-model Role {
-  id    Int    @id @default(autoincrement()) @map("role_id")
-  name  String @map("role_name")
-  users User[]
-
-  @@map("roles")
+enum ProgramType {
+  GENERAL
+  DEPARTMENT
 }
 
-model Department {
-  id          Int               @id @default(autoincrement()) @map("department_id")
-  name        String            @map("department_name")
+enum ProgramStatus {
+  draft
+  requesting_course
+  course_in_progress
+  waiting_approval
+  active
+  rejected
+  completed
+}
+
+model QuestionOption {
+  id          Int     @id @default(autoincrement()) @map("option_id")
+  question_id Int
+  option_text String
+  is_correct  Boolean @default(false)
+  position    Int
+
+  question Question @relation(fields: [question_id], references: [id], onDelete: Cascade)
+
+  @@unique([question_id, position])
+  @@index([question_id])
+  @@map("question_options")
+}
+
+model Badge {
+  id          Int     @id @default(autoincrement()) @map("badge_id")
+  name        String  @unique
   description String?
-  users       User[]
-  programs    TrainingProgram[]
-  proposals   ProgramProposal[]
+  icon_url    String?
+  point_rule  Int?
 
-  @@map("departments")
+  user_badges UserBadge[]
+
+  @@map("badges")
 }
 
-model User {
-  id                 Int     @id @default(autoincrement()) @map("user_id")
-  role_id            Int
-  department_id      Int
-  full_name          String
-  email              String  @unique
-  status             String  @default("active")
-  total_points       Int     @default(0)
-  photo_url          String?
-  notify_course      Boolean @default(true)
-  notify_deadline    Boolean @default(true)
-  notify_certificate Boolean @default(false)
+model UserBadge {
+  id         Int      @id @default(autoincrement()) @map("user_badge_id")
+  user_id    Int
+  badge_id   Int
+  awarded_at DateTime @default(now())
 
-  role       Role       @relation(fields: [role_id], references: [id])
-  department Department @relation(fields: [department_id], references: [id])
+  user  User  @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badge_id], references: [id], onDelete: Cascade)
 
-  submitted_proposals      ProgramProposal[]  @relation("SubmittedBy")
-  approved_proposals       ProgramProposal[]  @relation("ApprovedBy")
-  created_programs         TrainingProgram[]  @relation("CreatedBy")
-  course_requests_made     CourseRequest[]    @relation("RequestedBy")
-  course_requests_assigned CourseRequest[]    @relation("TrainerOf")
-  trained_courses          Course[]           @relation("TrainerCourse")
-  enrollments              CourseEnrollment[]
-  assessment_results       AssessmentResult[]
-  notifications            Notification[]
-  certificates             Certificate[]
-  auditLogs                AuditLog[]
-
-  @@index([department_id])
-  @@index([role_id])
-  @@map("users")
-}
-
-model ProgramProposal {
-  id             Int            @id @default(autoincrement()) @map("proposal_id")
-  submitted_by   Int
-  department_id  Int
-  reviewed_by    Int?
-  proposal_title String
-  description    String?
-  status         ProposalStatus @default(pending)
-  submitted_date DateTime       @default(now())
-  review_date    DateTime?
-  review_note    String?
-
-  submitter  User       @relation("SubmittedBy", fields: [submitted_by], references: [id])
-  reviewer   User?      @relation("ApprovedBy", fields: [reviewed_by], references: [id])
-  department Department @relation(fields: [department_id], references: [id])
-
-  training_programs TrainingProgram[]
-
-  @@index([submitted_by])
-  @@index([department_id])
-  @@index([status])
-  @@map("program_proposals")
-}
-
-model TrainingProgram {
-  id            Int      @id @default(autoincrement()) @map("program_id")
-  proposal_id   Int?
-  department_id Int?
-  created_by    Int
-  program_name  String
-  description   String?
-  program_type  String
-  status        String   @default("draft")
-  created_date  DateTime @default(now())
-
-  proposal   ProgramProposal? @relation(fields: [proposal_id], references: [id])
-  department Department?      @relation(fields: [department_id], references: [id])
-  creator    User             @relation("CreatedBy", fields: [created_by], references: [id])
-  courses    Course[]
-  requests   CourseRequest[]
-
-  @@index([department_id])
-  @@index([created_by])
-  @@map("training_programs")
-}
-
-model CourseRequest {
-  id           Int           @id @default(autoincrement()) @map("request_id")
-  program_id   Int
-  course_id    Int?
-  requested_by Int
-  trainer_id   Int
-  request_date DateTime      @default(now())
-  status       RequestStatus @default(pending)
-
-  program   TrainingProgram @relation(fields: [program_id], references: [id])
-  course    Course?         @relation("CourseRequested", fields: [course_id], references: [id])
-  requester User            @relation("RequestedBy", fields: [requested_by], references: [id])
-  trainer   User            @relation("TrainerOf", fields: [trainer_id], references: [id])
-
-  @@index([program_id])
-  @@index([trainer_id])
-  @@map("course_requests")
-}
-
-model Course {
-  id              Int                  @id @default(autoincrement()) @map("course_id")
-  program_id      Int
-  trainer_id      Int
-  assessment_id   Int?
-  course_title    String
-  description     String?
-  approval_status CourseApprovalStatus @default(draft)
-  deadline        DateTime?
-  created_date    DateTime             @default(now())
-
-  program      TrainingProgram    @relation(fields: [program_id], references: [id])
-  trainer      User               @relation("TrainerCourse", fields: [trainer_id], references: [id])
-  assessment   Assessment?        @relation("CourseAssessment", fields: [assessment_id], references: [id])
-  materials    LearningMaterial[]
-  assessments  Assessment[]       @relation("AssessmentCourse")
-  enrollments  CourseEnrollment[]
-  certificates Certificate[]
-  requests     CourseRequest[]    @relation("CourseRequested")
-
-  @@index([program_id])
-  @@index([trainer_id])
-  @@map("courses")
-}
-
-model LearningMaterial {
-  id             Int      @id @default(autoincrement()) @map("material_id")
-  course_id      Int
-  material_title String
-  material_type  String
-  file_url       String
-  uploaded_date  DateTime @default(now())
-
-  course Course @relation(fields: [course_id], references: [id])
-
-  @@index([course_id])
-  @@map("learning_materials")
-}
-
-model Assessment {
-  id            Int    @id @default(autoincrement()) @map("assessment_id")
-  course_id     Int
-  title         String
-  passing_score Int    @default(70)
-
-  course        Course             @relation("AssessmentCourse", fields: [course_id], references: [id])
-  linked_course Course[]           @relation("CourseAssessment")
-  questions     Question[]
-  results       AssessmentResult[]
-
-  @@index([course_id])
-  @@map("assessments")
-}
-
-model Question {
-  id             Int    @id @default(autoincrement()) @map("question_id")
-  assessment_id  Int
-  question_text  String
-  correct_answer String
-
-  assessment Assessment @relation(fields: [assessment_id], references: [id])
-
-  @@index([assessment_id])
-  @@map("questions")
-}
-
-model CourseEnrollment {
-  id                    Int              @id @default(autoincrement()) @map("enrollment_id")
-  user_id               Int
-  course_id             Int
-  assigned_date         DateTime         @default(now())
-  completion_percentage Int              @default(0)
-  status                EnrollmentStatus @default(assigned)
-
-  user   User   @relation(fields: [user_id], references: [id])
-  course Course @relation(fields: [course_id], references: [id])
-
-  @@unique([user_id, course_id])
+  @@unique([user_id, badge_id])
   @@index([user_id])
-  @@index([course_id])
-  @@map("course_enrollments")
-}
-
-model AssessmentResult {
-  id             Int      @id @default(autoincrement()) @map("result_id")
-  assessment_id  Int
-  user_id        Int
-  score          Float
-  completed_date DateTime @default(now())
-
-  assessment Assessment @relation(fields: [assessment_id], references: [id])
-  user       User       @relation(fields: [user_id], references: [id])
-
-  @@unique([assessment_id, user_id])
-  @@index([assessment_id])
-  @@index([user_id])
-  @@map("assessment_results")
-}
-
-model Notification {
-  id           Int      @id @default(autoincrement()) @map("notification_id")
-  user_id      Int
-  title        String
-  message      String
-  is_read      Boolean  @default(false)
-  created_date DateTime @default(now())
-
-  user User @relation(fields: [user_id], references: [id])
-
-  @@index([user_id])
-  @@map("notifications")
-}
-
-model Certificate {
-  id                 Int      @id @default(autoincrement()) @map("certificate_id")
-  user_id            Int
-  course_id          Int
-  certificate_number String   @unique
-  file_url           String?
-  issue_date         DateTime @default(now())
-
-  user   User   @relation(fields: [user_id], references: [id])
-  course Course @relation(fields: [course_id], references: [id])
-
-  @@unique([user_id, course_id])
-  @@index([user_id])
-  @@index([course_id])
-  @@map("certificates")
-}
-
-model AuditLog {
-  id           Int      @id @default(autoincrement())
-  user_id      Int?
-  action       String
-  entity       String
-  entity_id    Int?
-  description  String?
-  created_date DateTime @default(now())
-
-  user User? @relation(fields: [user_id], references: [id])
-
-  @@index([user_id])
-  @@map("audit_logs")
+  @@index([badge_id])
+  @@map("user_badges")
 }

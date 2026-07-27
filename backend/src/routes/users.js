@@ -38,7 +38,7 @@ router.get('/me', authMiddleware, async (req, res) => {
         role: { select: { id: true, name: true } }
       }
     })
-    if (!user) return res.status(404).json({ message: 'User tidak ditemukan' })
+    if (!user) return res.status(404).json({ message: 'User not found.' })
     res.json(user)
   } catch (err) {
     res.status(500).json({ message: err.message })
@@ -49,7 +49,7 @@ router.put('/me', authMiddleware, async (req, res) => {
   try {
     const { full_name } = req.body
     if (!full_name || !full_name.trim()) {
-      return res.status(400).json({ message: 'Nama tidak boleh kosong' })
+      return res.status(400).json({ message: 'Full name is required.' })
     }
 
     const user = await prisma.user.update({
@@ -98,7 +98,7 @@ router.put('/me/notifications', authMiddleware, async (req, res) => {
 router.post('/me/photo', authMiddleware, upload.single('photo'), async (req, res) => {
   try {
     if (!req.file) {
-      return res.status(400).json({ message: 'File foto tidak ditemukan' })
+      return res.status(400).json({ message: 'Profile photo file is required.' })
     }
 
     const result = await new Promise((resolve, reject) => {

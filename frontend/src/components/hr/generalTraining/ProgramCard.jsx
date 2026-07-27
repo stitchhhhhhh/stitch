@@ -30,7 +30,7 @@ export default function ProgramCard({ program, onViewDetails }) {
 
       <div className="p-6">
         <p className="text-sm text-gray-500 line-clamp-2">
-          {program.description || "Tidak ada deskripsi."}
+          {program.description || "No description available."}
         </p>
 
         <div className="mt-5 flex items-center justify-between text-sm">

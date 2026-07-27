@@ -28,7 +28,7 @@ export default function CourseRequests() {
 
     alert(
       err?.message ||
-        "Gagal memuat course requests."
+        "Failed to load course requests."
     );
 
     setCourses([]);
@@ -43,7 +43,7 @@ export default function CourseRequests() {
 
   async function handleApprove(courseId) {
   const confirmed = window.confirm(
-    "Apakah kamu yakin ingin menyetujui course ini?"
+    "Are you sure you want to approve this course?"
   );
 
   if (!confirmed) return;
@@ -57,18 +57,18 @@ export default function CourseRequests() {
     await loadCourses();
     setSelected(null);
 
-    alert("Course berhasil disetujui.");
+    alert("The course was approved successfully.");
   } catch (err) {
     alert(
       err?.message ||
-        "Gagal menyetujui course."
+        "Failed to approve the course."
     );
   }
 }
 
   async function handleReject(courseId) {
   const reason = window.prompt(
-    "Masukkan alasan penolakan:"
+    "Enter the rejection reason:"
   );
 
   if (!reason) return;
@@ -83,11 +83,11 @@ export default function CourseRequests() {
     await loadCourses();
     setSelected(null);
 
-    alert("Course berhasil ditolak.");
+    alert("The course was rejected successfully.");
   } catch (err) {
     alert(
       err?.message ||
-        "Gagal menolak course."
+        "Failed to reject the course."
     );
   }
 }
@@ -137,7 +137,7 @@ export default function CourseRequests() {
 
           {filteredCourses.length === 0 ? (
             <div className="bg-white rounded-3xl p-12 text-center text-gray-400 border border-gray-100">
-              Tidak ada kursus dengan status ini.
+              No courses match this status.
             </div>
           ) : (
             filteredCourses.map((course) => (
