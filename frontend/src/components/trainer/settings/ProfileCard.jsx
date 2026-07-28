@@ -1,8 +1,13 @@
 export default function ProfileCard({
   profile,
   onNameChange,
-  onPhotoChange,
 }) {
+  const avatarLetter =
+    profile?.full_name
+      ?.trim()
+      ?.charAt(0)
+      ?.toUpperCase() || "T";
+
   return (
     <div className="bg-white rounded-3xl shadow-sm p-8">
       <h2 className="text-2xl font-bold text-[#253B80] mb-8">
@@ -11,34 +16,19 @@ export default function ProfileCard({
 
       <div className="flex gap-8">
         <div className="flex flex-col items-center">
-          <img
-            src={profile.photo_url || "/empty-picture.png"}
-            alt={profile.full_name}
-            className="w-36 h-36 rounded-full object-cover border-4 border-gray-200"
-          />
-
-          <label className="mt-4 bg-[#3046D3] text-white px-5 py-2 rounded-xl cursor-pointer">
-            Change Photo
-
-            <input
-              type="file"
-              accept="image/*"
-              className="hidden"
-              onChange={(e) =>
-                onPhotoChange?.(e.target.files?.[0])
-              }
-            />
-          </label>
+          <div className="flex h-36 w-36 items-center justify-center rounded-full bg-[#3046D3] text-5xl font-bold text-white shadow-md">
+            {avatarLetter}
+          </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-6 flex-1">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 flex-1">
           <div>
             <label className="text-gray-500 text-sm">
               Full Name
             </label>
 
             <input
-              value={profile.full_name}
+              value={profile?.full_name || ""}
               onChange={(e) =>
                 onNameChange?.(e.target.value)
               }
@@ -53,8 +43,8 @@ export default function ProfileCard({
 
             <input
               readOnly
-              value={profile.email}
-              className="w-full mt-2 border rounded-xl px-4 py-3 bg-gray-50"
+              value={profile?.email || ""}
+              className="w-full mt-2 border rounded-xl px-4 py-3 bg-gray-50 text-gray-500"
             />
           </div>
 
@@ -65,8 +55,8 @@ export default function ProfileCard({
 
             <input
               readOnly
-              value={profile.department?.name || "-"}
-              className="w-full mt-2 border rounded-xl px-4 py-3 bg-gray-50"
+              value={profile?.department?.name || "-"}
+              className="w-full mt-2 border rounded-xl px-4 py-3 bg-gray-50 text-gray-500"
             />
           </div>
 
@@ -77,8 +67,8 @@ export default function ProfileCard({
 
             <input
               readOnly
-              value={profile.role?.name || "-"}
-              className="w-full mt-2 border rounded-xl px-4 py-3 bg-gray-50"
+              value={profile?.role?.name || "-"}
+              className="w-full mt-2 border rounded-xl px-4 py-3 bg-gray-50 text-gray-500"
             />
           </div>
         </div>

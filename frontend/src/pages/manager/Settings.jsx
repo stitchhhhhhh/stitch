@@ -10,14 +10,14 @@ import {
   getCurrentManagerProfile,
   updateManagerProfile,
   updateManagerNotifications,
-  uploadManagerPhoto,
+  
 } from "../../services/managerService";
 
 const emptyProfile = {
   id: null,
   full_name: "",
   email: "",
-  photo_url: "",
+  
   department: null,
   role: null,
   notify_course: false,
@@ -32,8 +32,7 @@ export default function Settings() {
 
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [uploadingPhoto, setUploadingPhoto] =
-    useState(false);
+  
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -88,49 +87,7 @@ export default function Settings() {
     }));
   }
 
-  async function handlePhotoUpload(file) {
-    if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-      alert("File harus berupa gambar.");
-      return;
-    }
-
-    const maximumSize = 5 * 1024 * 1024;
-
-    if (file.size > maximumSize) {
-      alert(
-        "Ukuran foto maksimal adalah 5 MB."
-      );
-      return;
-    }
-
-    try {
-      setUploadingPhoto(true);
-
-      const result =
-        await uploadManagerPhoto(file);
-
-      setProfile((current) => ({
-        ...current,
-        photo_url: result.photo_url,
-      }));
-
-      setInitialProfile((current) => ({
-        ...current,
-        photo_url: result.photo_url,
-      }));
-
-      alert("Foto profil berhasil diperbarui.");
-    } catch (err) {
-      alert(
-        err?.message ||
-          "Gagal mengunggah foto profil."
-      );
-    } finally {
-      setUploadingPhoto(false);
-    }
-  }
 
   async function handleSave() {
     const trimmedName =
@@ -256,7 +213,7 @@ export default function Settings() {
         <button
           type="button"
           onClick={handleSave}
-          disabled={saving || uploadingPhoto}
+          disabled={saving}
           className="bg-[#3046D3] text-white px-6 py-3 rounded-xl font-medium hover:bg-[#253B80] disabled:opacity-50"
         >
           {saving
@@ -266,11 +223,9 @@ export default function Settings() {
       </div>
 
       <ProfileSection
-        profile={profile}
-        onChange={handleProfileChange}
-        onPhotoUpload={handlePhotoUpload}
-        uploadingPhoto={uploadingPhoto}
-      />
+  profile={profile}
+  onChange={handleProfileChange}
+/>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2">
@@ -298,9 +253,7 @@ export default function Settings() {
         onReset={handleReset}
         onCancel={handleCancel}
         onSave={handleSave}
-        saving={
-          saving || uploadingPhoto
-        }
+        saving={saving}
       />
     </div>
   );

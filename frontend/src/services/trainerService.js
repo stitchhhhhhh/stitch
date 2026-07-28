@@ -722,3 +722,174 @@ export async function uploadTrainerPhoto(
 
   return data;
 }
+
+function validatePositiveId(value, label = "ID") {
+  const normalizedId = Number(value);
+
+  if (
+    !Number.isInteger(normalizedId) ||
+    normalizedId <= 0
+  ) {
+    throw new Error(`Invalid ${label}.`);
+  }
+
+  return normalizedId;
+}
+
+async function trainerRequest(
+  url,
+  options = {},
+  fallbackMessage = "The request could not be completed."
+) {
+  const response = await fetch(url, {
+    cache: "no-store",
+    ...options,
+    headers: {
+      ...authHeaders(),
+      ...(options.headers || {}),
+    },
+  });
+
+  const data = await readResponse(response);
+
+  if (!response.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        fallbackMessage,
+        response.status
+      )
+    );
+  }
+
+  return data;
+}
+
+export async function getTrainerCourseDetail(
+  courseId
+) {
+  const normalizedCourseId =
+    validatePositiveId(courseId, "course ID");
+
+  return trainerRequest(
+    `/api/courses/${normalizedCourseId}`,
+    {},
+    "Failed to load course details."
+  );
+}
+
+export async function getTrainerCourseAssessments(
+  courseId
+) {
+  const normalizedCourseId =
+    validatePositiveId(courseId, "course ID");
+
+  const data = await trainerRequest(
+    `/api/assessments/course/${normalizedCourseId}`,
+    {},
+    "Failed to load course assessments."
+  );
+
+  return Array.isArray(data) ? data : [];
+}
+
+export async function createTrainerAssessment({
+  course_id,
+  title,
+  passing_score,
+}) {
+  const normalizedCourseId =
+    validatePositiveId(course_id, "course ID");
+
+  return trainerRequest(
+    "/api/assessments",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        course_id: normalizedCourseId,
+        title,
+        passing_score,
+      }),
+    },
+    "Failed to create the assessment."
+  );
+}
+
+export async function createAssessmentQuestion(
+  assessmentId,
+  {
+    question_text,
+    correct_answer,
+  }
+) {
+  const normalizedAssessmentId =
+    validatePositiveId(
+      assessmentId,
+      "assessment ID"
+    );
+
+  return trainerRequest(
+    `/api/assessments/${normalizedAssessmentId}/questions`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        question_text,
+        correct_answer,
+      }),
+    },
+    "Failed to create the assessment question."
+  );
+}
+
+export async function updateAssessmentQuestion(
+  questionId,
+  {
+    question_text,
+    correct_answer,
+  }
+) {
+  const normalizedQuestionId =
+    validatePositiveId(
+      questionId,
+      "question ID"
+    );
+
+  return trainerRequest(
+    `/api/assessments/questions/${normalizedQuestionId}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        question_text,
+        correct_answer,
+      }),
+    },
+    "Failed to update the assessment question."
+  );
+}
+
+export async function deleteAssessmentQuestion(
+  questionId
+) {
+  const normalizedQuestionId =
+    validatePositiveId(
+      questionId,
+      "question ID"
+    );
+
+  return trainerRequest(
+    `/api/assessments/questions/${normalizedQuestionId}`,
+    {
+      method: "DELETE",
+    },
+    "Failed to delete the assessment question."
+  );
+}

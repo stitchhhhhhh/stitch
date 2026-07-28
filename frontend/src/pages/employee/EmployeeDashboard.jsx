@@ -364,7 +364,28 @@ useEffect(() => {
           />
 
           <div className="grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-6">
-            <CurrentCourseCard course={currentCourse} />
+           <CurrentCourseCard
+  course={currentCourse}
+  onContinue={(course) => {
+    const courseId =
+      course?.course_id ??
+      course?.id ??
+      course?.enrollment?.course_id
+
+    if (!courseId) {
+      console.error(
+        'Cannot continue learning because the course ID is missing.',
+        course
+      )
+
+      return
+    }
+
+    navigate(
+      `/employee/courses/${courseId}`
+    )
+  }}
+/>
             <TopLearners leaderboard={leaderboard} currentUserId={userId} />
           </div>
 

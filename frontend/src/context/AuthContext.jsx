@@ -156,7 +156,9 @@ export function AuthProvider({ children }) {
 
     await logoutFromBackend(currentToken)
 
-    clearAuthenticationState()
+clearAuthenticationState()
+
+window.location.replace('/login')
 
     localStorage.setItem(
       AUTH_EVENT_KEY,

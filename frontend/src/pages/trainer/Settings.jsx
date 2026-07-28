@@ -10,7 +10,6 @@ import {
   getCurrentTrainerProfile,
   updateTrainerProfile,
   updateTrainerNotifications,
-  uploadTrainerPhoto,
 } from "../../services/trainerService";
 
 const emptyProfile = {
@@ -19,7 +18,6 @@ const emptyProfile = {
   email: "",
   status: "inactive",
   total_points: 0,
-  photo_url: "",
   notify_course: true,
   notify_deadline: true,
   notify_certificate: false,
@@ -28,15 +26,20 @@ const emptyProfile = {
 };
 
 export default function TrainerSettings() {
-  const [profile, setProfile] = useState(emptyProfile);
+  const [profile, setProfile] =
+    useState(emptyProfile);
+
   const [initialProfile, setInitialProfile] =
     useState(emptyProfile);
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [uploadingPhoto, setUploadingPhoto] =
+  const [loading, setLoading] =
+    useState(true);
+
+  const [saving, setSaving] =
     useState(false);
-  const [error, setError] = useState("");
+
+  const [error, setError] =
+    useState("");
 
   useEffect(() => {
     let active = true;
@@ -46,7 +49,8 @@ export default function TrainerSettings() {
         setLoading(true);
         setError("");
 
-        const data = await getCurrentTrainerProfile();
+        const data =
+          await getCurrentTrainerProfile();
 
         if (!active) return;
 
@@ -56,13 +60,15 @@ export default function TrainerSettings() {
         };
 
         setProfile(normalizedProfile);
-        setInitialProfile(normalizedProfile);
+        setInitialProfile(
+          normalizedProfile
+        );
       } catch (err) {
         if (!active) return;
 
         setError(
           err?.message ||
-            "Gagal mengambil trainer settings."
+            "Failed to load trainer settings."
         );
       } finally {
         if (active) {
@@ -85,60 +91,24 @@ export default function TrainerSettings() {
     }));
   }
 
-  function handleNotificationChange(key, enabled) {
+  function handleNotificationChange(
+    key,
+    enabled
+  ) {
     setProfile((current) => ({
       ...current,
       [key]: enabled,
     }));
   }
 
-  async function handlePhotoChange(file) {
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      alert("File yang dipilih harus berupa gambar.");
-      return;
-    }
-
-    const maxFileSize = 5 * 1024 * 1024;
-
-    if (file.size > maxFileSize) {
-      alert("Ukuran foto maksimal 5 MB.");
-      return;
-    }
-
-    try {
-      setUploadingPhoto(true);
-
-      const updatedPhoto =
-        await uploadTrainerPhoto(file);
-
-      setProfile((current) => ({
-        ...current,
-        photo_url: updatedPhoto.photo_url,
-      }));
-
-      setInitialProfile((current) => ({
-        ...current,
-        photo_url: updatedPhoto.photo_url,
-      }));
-
-      alert("Foto profil berhasil diperbarui.");
-    } catch (err) {
-      alert(
-        err?.message ||
-          "Gagal mengunggah foto profil."
-      );
-    } finally {
-      setUploadingPhoto(false);
-    }
-  }
-
   async function handleSave() {
-    const trimmedName = profile.full_name.trim();
+    const trimmedName =
+      profile.full_name.trim();
 
     if (!trimmedName) {
-      alert("Nama trainer tidak boleh kosong.");
+      alert(
+        "Trainer name cannot be empty."
+      );
       return;
     }
 
@@ -146,16 +116,23 @@ export default function TrainerSettings() {
       setSaving(true);
       setError("");
 
-      const [updatedProfile, updatedNotifications] =
-        await Promise.all([
-          updateTrainerProfile(trimmedName),
-          updateTrainerNotifications({
-            notify_course: profile.notify_course,
-            notify_deadline: profile.notify_deadline,
-            notify_certificate:
-              profile.notify_certificate,
-          }),
-        ]);
+      const [
+        updatedProfile,
+        updatedNotifications,
+      ] = await Promise.all([
+        updateTrainerProfile(
+          trimmedName
+        ),
+
+        updateTrainerNotifications({
+          notify_course:
+            profile.notify_course,
+          notify_deadline:
+            profile.notify_deadline,
+          notify_certificate:
+            profile.notify_certificate,
+        }),
+      ]);
 
       const savedProfile = {
         ...profile,
@@ -165,13 +142,17 @@ export default function TrainerSettings() {
       };
 
       setProfile(savedProfile);
-      setInitialProfile(savedProfile);
+      setInitialProfile(
+        savedProfile
+      );
 
-      alert("Trainer settings berhasil disimpan.");
+      alert(
+        "Trainer settings saved successfully."
+      );
     } catch (err) {
       const message =
         err?.message ||
-        "Gagal menyimpan trainer settings.";
+        "Failed to save trainer settings.";
 
       setError(message);
       alert(message);
@@ -181,9 +162,10 @@ export default function TrainerSettings() {
   }
 
   function handleReset() {
-    const confirmed = window.confirm(
-      "Reset perubahan ke data terakhir yang tersimpan?"
-    );
+    const confirmed =
+      window.confirm(
+        "Reset changes to the last saved data?"
+      );
 
     if (!confirmed) return;
 
@@ -198,7 +180,7 @@ export default function TrainerSettings() {
 
   if (loading) {
     return (
-      <div className="bg-white rounded-3xl shadow-sm p-8">
+      <div className="rounded-3xl bg-white p-8 shadow-sm">
         <p className="text-gray-500">
           Loading trainer settings...
         </p>
@@ -208,26 +190,23 @@ export default function TrainerSettings() {
 
   if (error && !profile.id) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
-        <p className="text-red-700 font-medium">
+      <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
+        <p className="font-medium text-red-700">
           {error}
         </p>
       </div>
     );
   }
 
-  const actionDisabled =
-    saving || uploadingPhoto;
-
   return (
     <div className="space-y-8">
-      <div className="flex justify-between items-center">
+      <div className="flex items-center justify-between">
         <div>
           <h1 className="text-4xl font-bold text-[#253B80]">
             Settings
           </h1>
 
-          <p className="text-gray-500 mt-2">
+          <p className="mt-2 text-gray-500">
             Manage your trainer profile and account preferences.
           </p>
         </div>
@@ -235,19 +214,17 @@ export default function TrainerSettings() {
         <button
           type="button"
           onClick={handleSave}
-          disabled={actionDisabled}
-          className="px-8 py-3 rounded-xl bg-[#3046D3] text-white hover:bg-[#253B80] transition disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={saving}
+          className="rounded-xl bg-[#3046D3] px-8 py-3 text-white transition hover:bg-[#253B80] disabled:cursor-not-allowed disabled:opacity-50"
         >
           {saving
             ? "Saving..."
-            : uploadingPhoto
-              ? "Uploading..."
-              : "Save Preferences"}
+            : "Save Preferences"}
         </button>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
+        <div className="rounded-2xl border border-red-200 bg-red-50 p-4">
           <p className="text-red-700">
             {error}
           </p>
@@ -256,26 +233,34 @@ export default function TrainerSettings() {
 
       <ProfileCard
         profile={profile}
-        onNameChange={handleNameChange}
-        onPhotoChange={handlePhotoChange}
+        onNameChange={
+          handleNameChange
+        }
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <AccountCard profile={profile} />
-        <SecurityCard profile={profile} />
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
+        <AccountCard
+          profile={profile}
+        />
+
+        <SecurityCard
+          profile={profile}
+        />
       </div>
 
       <NotificationPreferences
         preferences={profile}
-        onChange={handleNotificationChange}
-        disabled={actionDisabled}
+        onChange={
+          handleNotificationChange
+        }
+        disabled={saving}
       />
 
       <FooterActions
         onReset={handleReset}
         onCancel={handleCancel}
         onSave={handleSave}
-        saving={actionDisabled}
+        saving={saving}
       />
     </div>
   );

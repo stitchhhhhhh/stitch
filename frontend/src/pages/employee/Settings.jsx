@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import {
   getMyProfile,
   updateMyProfile,
-  uploadProfilePhoto,
   updateNotificationPreferences,
 } from "../../services/userService";
 
@@ -52,7 +51,7 @@ export default function Settings() {
 
         alert(
           err?.message ||
-            "Gagal mengambil data settings."
+            "Failed to load settings."
         );
       })
       .finally(() => {
@@ -71,7 +70,7 @@ export default function Settings() {
       nameInput.trim();
 
     if (!trimmedName) {
-      alert("Nama tidak boleh kosong.");
+      alert("Name cannot be empty.");
       return;
     }
 
@@ -98,12 +97,12 @@ export default function Settings() {
       );
 
       alert(
-        "Profil berhasil disimpan."
+        "Profile saved successfully."
       );
     } catch (err) {
       alert(
         err?.message ||
-          "Gagal menyimpan profil."
+          "Failed to save profile."
       );
     } finally {
       setSaving(false);
@@ -123,7 +122,7 @@ export default function Settings() {
   function handleReset() {
     const confirmed =
       window.confirm(
-        "Reset pengaturan profil dan notifikasi ke data terakhir yang tersimpan?"
+        "Reset profile and notification settings to the last saved data?"
       );
 
     if (
@@ -138,21 +137,6 @@ export default function Settings() {
     setNameInput(
       initialProfile.full_name || ""
     );
-  }
-
-  async function handlePhotoUpload(file) {
-    const result =
-      await uploadProfilePhoto(file);
-
-    setProfile((prev) => ({
-      ...prev,
-      photo_url: result.photo_url,
-    }));
-
-    setInitialProfile((prev) => ({
-      ...prev,
-      photo_url: result.photo_url,
-    }));
   }
 
   async function handleToggleNotification(
@@ -184,14 +168,14 @@ export default function Settings() {
 
       alert(
         err?.message ||
-          "Gagal menyimpan preferensi notifikasi."
+          "Failed to save notification preferences."
       );
     }
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64 text-gray-400">
+      <div className="flex h-64 items-center justify-center text-gray-400">
         Loading settings...
       </div>
     );
@@ -199,8 +183,8 @@ export default function Settings() {
 
   if (!profile) {
     return (
-      <div className="bg-red-50 text-red-600 rounded-2xl p-6">
-        Data profil tidak tersedia.
+      <div className="rounded-2xl bg-red-50 p-6 text-red-600">
+        Profile data is not available.
       </div>
     );
   }
@@ -212,7 +196,7 @@ export default function Settings() {
           Settings
         </h1>
 
-        <p className="text-gray-500 mt-2">
+        <p className="mt-2 text-gray-500">
           Manage your employee profile and account preferences.
         </p>
       </div>
@@ -223,12 +207,9 @@ export default function Settings() {
           full_name: nameInput,
         }}
         onNameChange={setNameInput}
-        onPhotoUpload={
-          handlePhotoUpload
-        }
       />
 
-      <div className="grid grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
         <AccountSettingsCard />
         <SecurityCard />
       </div>

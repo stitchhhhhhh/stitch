@@ -2,6 +2,7 @@ import {
   FileText,
   Video,
   FileSpreadsheet,
+  Trash2,
 } from "lucide-react";
 
 function getIcon(type) {
@@ -92,7 +93,9 @@ export default function RecentMaterials({
   materials = [],
   onViewAll,
   onUpload,
+  onDelete,
   uploadDisabled = false,
+  deletingMaterialId = null,
 }) {
   const recent = [...materials]
     .filter(Boolean)
@@ -117,7 +120,7 @@ export default function RecentMaterials({
         <button
           type="button"
           onClick={onViewAll}
-          className="text-[#3046D3] font-semibold hover:underline"
+          className="text-[#3046D3] font-semibold hover:underline cursor-pointer"
         >
           View All
         </button>
@@ -129,32 +132,60 @@ export default function RecentMaterials({
         </p>
       ) : (
         <div className="space-y-5">
-          {recent.map((item) => (
-            <div
-              key={item.id}
-              className="flex items-center gap-4"
-            >
-              <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center">
-                {getIcon(
-                  item.material_type
-                )}
-              </div>
+          {recent.map((item) => {
+  const deleting =
+    deletingMaterialId ===
+    item.id;
 
-              <div className="flex-1 min-w-0">
-                <h3 className="font-semibold truncate">
-                  {item.material_title ||
-                    "Untitled Material"}
-                </h3>
-
-                <p className="text-sm text-gray-500">
-                  Uploaded{" "}
-                  {timeAgo(
-                    item.uploaded_date
+  return (
+              <div
+                key={item.id}
+                className="flex items-center gap-4"
+              >
+                <div className="w-12 h-12 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
+                  {getIcon(
+                    item.material_type
                   )}
-                </p>
+                </div>
+
+                <div className="flex-1 min-w-0">
+                  <h3 className="font-semibold truncate">
+                    {item.material_title ||
+                      "Untitled Material"}
+                  </h3>
+
+                  <p className="text-sm text-gray-500">
+                    Uploaded{" "}
+                    {timeAgo(
+                      item.uploaded_date
+                    )}
+                  </p>
+
+                  {item.course_title && (
+                    <p className="text-xs text-gray-400 truncate mt-1">
+                      {item.course_title}
+                    </p>
+                  )}
+                </div>
+
+                <button
+  type="button"
+  onClick={() =>
+    onDelete?.(item)
+  }
+  disabled={deleting}
+  title="Delete material"
+  aria-label={`Delete ${
+    item.material_title ||
+    "material"
+  }`}
+  className="p-2 rounded-lg text-red-500 hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50 cursor-pointer"
+>
+  <Trash2 size={19} />
+</button>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
 
@@ -162,7 +193,7 @@ export default function RecentMaterials({
         <button
           type="button"
           onClick={onViewAll}
-          className="flex-1 border rounded-xl py-3 hover:bg-gray-100"
+          className="flex-1 border rounded-xl py-3 hover:bg-gray-100 cursor-pointer"
         >
           View Files
         </button>
@@ -176,7 +207,7 @@ export default function RecentMaterials({
               ? "Create a course before uploading materials."
               : "Upload learning material"
           }
-          className="flex-1 bg-[#3046D3] text-white rounded-xl py-3 hover:bg-[#253B80] disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 disabled:hover:bg-gray-300"
+          className="flex-1 bg-[#3046D3] text-white rounded-xl py-3 hover:bg-[#253B80] cursor-pointer disabled:cursor-not-allowed disabled:bg-gray-300 disabled:text-gray-500 disabled:hover:bg-gray-300"
         >
           Upload
         </button>
