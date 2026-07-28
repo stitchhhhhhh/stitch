@@ -1,69 +1,81 @@
 /**
- * authService.js
- * Email/Password + Google OAuth
+ * Authentication service for email/password and Google OAuth.
  */
 
 async function parseResponse(response) {
-  const contentType = response.headers.get("content-type") || "";
+  const contentType = response.headers.get('content-type') || ''
 
-  if (!contentType.includes("application/json")) {
-    const text = await response.text();
-    console.error("Server returned non-JSON response:", text);
+  if (!contentType.includes('application/json')) {
+    const text = await response.text()
+
+    console.error('Server returned a non-JSON response:', text)
 
     throw new Error(
-      "Server mengembalikan HTML, bukan JSON. Periksa konfigurasi API atau Nginx."
-    );
+      'The server returned an invalid response. Check the API or Nginx configuration.'
+    )
   }
 
-  return response.json();
+  return response.json()
 }
 
-// ===============================
-// Login Email + Password
-// ===============================
 export async function loginWithEmail(email, password) {
-  const response = await fetch("/api/auth/login", {
-    method: "POST",
+  const response = await fetch('/api/auth/login', {
+    method: 'POST',
     headers: {
-      "Content-Type": "application/json",
+      'Content-Type': 'application/json'
     },
     body: JSON.stringify({
       email,
-      password,
-    }),
-  });
+      password
+    })
+  })
 
-  const data = await parseResponse(response);
+  const data = await parseResponse(response)
 
   if (!response.ok) {
-    throw new Error(data.message || "Failed to login.");
+    throw new Error(data.message || 'Failed to sign in.')
   }
 
-  return data;
+  return data
 }
 
-// ===============================
-// Google OAuth
-// ===============================
 export function loginWithGoogle() {
-  window.location.href = "/api/auth/google";
+  window.location.href = '/api/auth/google'
 }
 
-// ===============================
-// Ambil user dari token
-// ===============================
 export async function fetchUserFromToken(token) {
-  const response = await fetch("/api/auth/me", {
-    headers: {
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  const data = await parseResponse(response);
-
-  if (!response.ok) {
-    throw new Error(data.message || "Failed to fetch user.");
+  if (!token) {
+    throw new Error('Authentication token is missing.')
   }
 
-  return data;
+  const response = await fetch('/api/auth/me', {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${token}`
+    },
+    cache: 'no-store'
+  })
+
+  const data = await parseResponse(response)
+
+  if (!response.ok) {
+    throw new Error(data.message || 'Authentication session is invalid.')
+  }
+
+  return data
+}
+
+export async function logoutFromBackend(token) {
+  try {
+    await fetch('/api/auth/logout', {
+      method: 'POST',
+      headers: token
+        ? {
+            Authorization: `Bearer ${token}`
+          }
+        : {}
+    })
+  } catch (error) {
+    console.error('Backend logout request failed:', error)
+  }
 }

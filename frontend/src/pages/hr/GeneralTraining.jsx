@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
-import {
-  getPrograms,
-  createProgram,
-} from "../../services/trainerService";
+import { getPrograms, createProgram } from "../../services/trainerService";
+import { getHROverview } from "../../services/hrService";
 
 import ProgramStats from "../../components/hr/generalTraining/ProgramStats";
 import ProgramCard from "../../components/hr/generalTraining/ProgramCard";
@@ -12,6 +10,7 @@ import RequestTrainerModal from "../../components/hr/generalTraining/RequestTrai
 export default function GeneralTraining() {
   const [programs, setPrograms] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [overview, setOverview] = useState(null);
   const [showRequestTrainer, setShowRequestTrainer] =
     useState(false);
 
@@ -35,6 +34,7 @@ export default function GeneralTraining() {
 
   useEffect(() => {
     loadPrograms();
+    getHROverview().then(setOverview).catch(() => setOverview(null));
   }, []);
 
   async function handleSubmit(e) {
@@ -52,13 +52,13 @@ export default function GeneralTraining() {
 
       await loadPrograms();
 
-      alert("Program berhasil dibuat.");
+      alert("Program was created successfully.");
     } catch (err) {
       console.error(err);
 
       alert(
         err?.message ||
-          "Gagal membuat program."
+          "Failed to create the program."
       );
     }
   }
@@ -159,7 +159,7 @@ export default function GeneralTraining() {
         </form>
       )}
 
-      <ProgramStats />
+      <ProgramStats summary={overview?.summary || {}} />
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-4 gap-6">
         {programs.map((program) => (
@@ -194,7 +194,7 @@ export default function GeneralTraining() {
           }
           onRequested={() =>
             alert(
-              "Request berhasil dikirim ke trainer!"
+              "The request was sent to the trainer successfully."
             )
           }
         />

@@ -1,271 +1,648 @@
 function authHeaders() {
-  const token = localStorage.getItem('token');
-  return token ? { Authorization: `Bearer ${token}` } : {};
+  const token = localStorage.getItem("token");
+
+  return token
+    ? {
+        Authorization: `Bearer ${token}`,
+      }
+    : {};
+}
+
+async function readResponse(response) {
+  const contentType =
+    response.headers.get("content-type") || "";
+
+  if (contentType.includes("application/json")) {
+    return response.json().catch(() => ({}));
+  }
+
+  const text = await response
+    .text()
+    .catch(() => "");
+
+  return text
+    ? {
+        message: text,
+      }
+    : {};
+}
+
+function getErrorMessage(
+  data,
+  fallbackMessage,
+  status
+) {
+  if (
+    typeof data?.message === "string" &&
+    data.message.trim()
+  ) {
+    return data.message.trim();
+  }
+
+  if (
+    typeof data?.error === "string" &&
+    data.error.trim()
+  ) {
+    return data.error.trim();
+  }
+
+  if (status) {
+    return `${fallbackMessage} (HTTP ${status})`;
+  }
+
+  return fallbackMessage;
 }
 
 export async function getTrainerCourses() {
-  const res = await fetch('/api/courses/trainer/me', {
-    cache: 'no-store',
-    headers: authHeaders(),
-  });
+  const res = await fetch(
+    "/api/courses/trainer/me",
+    {
+      cache: "no-store",
+      headers: authHeaders(),
+    }
+  );
+
+  const data = await readResponse(res);
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || 'Failed to retrieve trainer courses');
+    throw new Error(
+      getErrorMessage(
+        data,
+        "Failed to retrieve trainer courses.",
+        res.status
+      )
+    );
   }
 
-  const data = await res.json();
   return Array.isArray(data) ? data : [];
 }
 
-export async function getTrainerCourseRequests(trainerId) {
-  const res = await fetch(`/api/course-requests/trainer/${trainerId}`, {
-    headers: authHeaders(),
-  });
-  if (!res.ok) throw new Error('Gagal mengambil data permintaan kursus');
-  return res.json();
+export async function getTrainerCourseRequests(
+  trainerId
+) {
+  const res = await fetch(
+    `/api/course-requests/trainer/${trainerId}`,
+    {
+      cache: "no-store",
+      headers: authHeaders(),
+    }
+  );
+
+  const data = await readResponse(res);
+
+  if (!res.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "Failed to load course requests.",
+        res.status
+      )
+    );
+  }
+
+  return Array.isArray(data) ? data : [];
 }
 
-export async function updateCourseRequestStatus(requestId, status) {
-  const res = await fetch(`/api/course-requests/${requestId}`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      ...authHeaders(),
-    },
-    body: JSON.stringify({ status }),
-  });
-  if (!res.ok) throw new Error('Gagal update status permintaan');
-  return res.json();
+export async function updateCourseRequestStatus(
+  requestId,
+  status
+) {
+  const res = await fetch(
+    `/api/course-requests/${requestId}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeaders(),
+      },
+      body: JSON.stringify({
+        status,
+      }),
+    }
+  );
+
+  const data = await readResponse(res);
+
+  if (!res.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "Failed to update course request status.",
+        res.status
+      )
+    );
+  }
+
+  return data;
 }
 
 export async function getPrograms() {
-  const res = await fetch('/api/programs', {
+  const res = await fetch("/api/programs", {
+    cache: "no-store",
     headers: authHeaders(),
   });
-  if (!res.ok) throw new Error('Gagal mengambil data program');
-  return res.json();
-}
 
-export async function createCourse({ program_id, course_title, description, deadline }) {
-  const res = await fetch('/api/courses', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...authHeaders(),
-    },
-    body: JSON.stringify({ program_id, course_title, description, deadline }),
-  });
+  const data = await readResponse(res);
+
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || 'Gagal membuat kursus');
+    throw new Error(
+      getErrorMessage(
+        data,
+        "Failed to load training programs.",
+        res.status
+      )
+    );
   }
-  return res.json();
+
+  return Array.isArray(data) ? data : [];
 }
 
-export async function submitCourseForReview(courseId) {
-  const res = await fetch(`/api/courses/${courseId}/submit`, {
-    method: 'PUT',
-    headers: authHeaders(),
-  });
-  if (!res.ok) throw new Error('Gagal submit kursus');
-  return res.json();
-}
-
-export async function uploadMaterial({ course_id, material_title, material_type, file }) {
-  const formData = new FormData();
-  formData.append('course_id', course_id);
-  formData.append('material_title', material_title);
-  formData.append('material_type', material_type);
-  formData.append('file', file);
-
-  const res = await fetch('/api/materials/upload', {
-    method: 'POST',
-    headers: authHeaders(),
-    body: formData,
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || 'Gagal upload materi');
-  }
-  return res.json();
-}
-
-export async function getCourseMaterials(courseId) {
-  const res = await fetch(`/api/materials/course/${courseId}`, {
-    headers: authHeaders(),
-  });
-  if (!res.ok) throw new Error('Gagal mengambil materi kursus');
-  return res.json();
-}
-
-export async function deleteMaterial(materialId) {
-  const res = await fetch(`/api/materials/${materialId}`, {
-    method: 'DELETE',
-    headers: authHeaders(),
-  });
-  if (!res.ok) throw new Error('Gagal menghapus materi');
-  return res.json();
-}
-
-export async function createProgram({ program_name, description }) {
-  const res = await fetch('/api/programs', {
-    method: 'POST',
+export async function createCourse({
+  request_id,
+  program_id,
+  course_title,
+  description,
+  deadline,
+}) {
+  const res = await fetch("/api/courses", {
+    method: "POST",
     headers: {
-      'Content-Type': 'application/json',
+      "Content-Type": "application/json",
       ...authHeaders(),
     },
     body: JSON.stringify({
-      program_name,
+      request_id,
+      program_id,
+      course_title,
       description,
+      deadline,
     }),
   });
 
+  const data = await readResponse(res);
+
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || 'Gagal membuat program');
+    throw new Error(
+      getErrorMessage(
+        data,
+        "Failed to create course.",
+        res.status
+      )
+    );
   }
 
-  return res.json();
+  return data;
+}
+
+export async function updateTrainerCourse(
+  courseId,
+  {
+    course_title,
+    description,
+    deadline,
+  }
+) {
+  const res = await fetch(
+    `/api/courses/${courseId}`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeaders(),
+      },
+      body: JSON.stringify({
+        course_title,
+        description,
+        deadline,
+      }),
+    }
+  );
+
+  const data = await readResponse(res);
+
+  if (!res.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "Failed to update course.",
+        res.status
+      )
+    );
+  }
+
+  return data;
+}
+
+export async function submitCourseForReview(
+  courseId
+) {
+  const res = await fetch(
+    `/api/courses/${courseId}/submit`,
+    {
+      method: "PUT",
+      headers: authHeaders(),
+    }
+  );
+
+  const data = await readResponse(res);
+
+  if (!res.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "Failed to submit course.",
+        res.status
+      )
+    );
+  }
+
+  return data;
+}
+
+export async function uploadMaterial({
+  course_id,
+  material_title,
+  material_type,
+  file,
+}) {
+  if (!course_id) {
+    throw new Error(
+      "Please select a course."
+    );
+  }
+
+  if (!material_title?.trim()) {
+    throw new Error(
+      "Material title is required."
+    );
+  }
+
+  if (!(file instanceof File)) {
+    throw new Error(
+      "Please choose a valid file."
+    );
+  }
+
+  const formData = new FormData();
+
+  formData.append(
+    "course_id",
+    String(course_id)
+  );
+
+  formData.append(
+    "material_title",
+    material_title.trim()
+  );
+
+  formData.append(
+    "material_type",
+    String(material_type || "")
+  );
+
+  formData.append(
+    "file",
+    file,
+    file.name
+  );
+
+  const res = await fetch(
+    "/api/materials/upload",
+    {
+      method: "POST",
+
+      // Do not add Content-Type here.
+      // The browser must generate the multipart boundary.
+      headers: authHeaders(),
+
+      body: formData,
+    }
+  );
+
+  const data = await readResponse(res);
+
+  if (!res.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "Failed to upload learning material.",
+        res.status
+      )
+    );
+  }
+
+  return data;
+}
+
+export async function getCourseMaterials(
+  courseId
+) {
+  const res = await fetch(
+    `/api/materials/course/${courseId}`,
+    {
+      cache: "no-store",
+      headers: authHeaders(),
+    }
+  );
+
+  const data = await readResponse(res);
+
+  if (!res.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "Failed to load course materials.",
+        res.status
+      )
+    );
+  }
+
+  return Array.isArray(data) ? data : [];
+}
+
+export async function deleteMaterial(
+  materialId
+) {
+  const res = await fetch(
+    `/api/materials/${materialId}`,
+    {
+      method: "DELETE",
+      headers: authHeaders(),
+    }
+  );
+
+  const data = await readResponse(res);
+
+  if (!res.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "Failed to delete material.",
+        res.status
+      )
+    );
+  }
+
+  return data;
+}
+
+export async function createProgram({
+  program_name,
+  description,
+}) {
+  const res = await fetch(
+    "/api/programs",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/json",
+        ...authHeaders(),
+      },
+      body: JSON.stringify({
+        program_name,
+        description,
+      }),
+    }
+  );
+
+  const data = await readResponse(res);
+
+  if (!res.ok) {
+    throw new Error(
+      getErrorMessage(
+        data,
+        "Failed to create program.",
+        res.status
+      )
+    );
+  }
+
+  return data;
 }
 
 export async function getProposals() {
-  const res = await fetch('/api/proposals', {
-    headers: authHeaders(),
-  });
+  const res = await fetch(
+    "/api/proposals",
+    {
+      cache: "no-store",
+      headers: authHeaders(),
+    }
+  );
+
+  const data = await readResponse(res);
 
   if (!res.ok) {
-    throw new Error('Gagal mengambil proposal');
+    throw new Error(
+      getErrorMessage(
+        data,
+        "Failed to load proposals.",
+        res.status
+      )
+    );
   }
 
-  return res.json();
+  return Array.isArray(data) ? data : [];
 }
 
 export async function createProposal({
   proposal_title,
   description,
 }) {
-  const res = await fetch('/api/proposals', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      ...authHeaders(),
-    },
-    body: JSON.stringify({
-      proposal_title,
-      description,
-    }),
-  });
+  const res = await fetch(
+    "/api/proposals",
+    {
+      method: "POST",
+      headers: {
+        "Content-Type":
+          "application/json",
+        ...authHeaders(),
+      },
+      body: JSON.stringify({
+        proposal_title,
+        description,
+      }),
+    }
+  );
+
+  const data = await readResponse(res);
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || 'Gagal membuat proposal');
+    throw new Error(
+      getErrorMessage(
+        data,
+        "Failed to create proposal.",
+        res.status
+      )
+    );
   }
 
-  return res.json();
+  return data;
 }
 
-export async function reviewProposal(id, status) {
-  const res = await fetch(`/api/proposals/${id}/review`, {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      ...authHeaders(),
-    },
-    body: JSON.stringify({ status }),
-  });
+export async function reviewProposal(
+  id,
+  status
+) {
+  const res = await fetch(
+    `/api/proposals/${id}/review`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type":
+          "application/json",
+        ...authHeaders(),
+      },
+      body: JSON.stringify({
+        status,
+      }),
+    }
+  );
+
+  const data = await readResponse(res);
 
   if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error(err.message || 'Gagal review proposal');
+    throw new Error(
+      getErrorMessage(
+        data,
+        "Failed to review proposal.",
+        res.status
+      )
+    );
   }
 
-  return res.json();
+  return data;
 }
 
 export async function getNotifications() {
-  const res = await fetch('/api/notifications', {
-    cache: 'no-store',
-    headers: authHeaders(),
-  });
+  const res = await fetch(
+    "/api/notifications",
+    {
+      cache: "no-store",
+      headers: authHeaders(),
+    }
+  );
+
+  const data = await readResponse(res);
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || 'Gagal mengambil notifikasi');
+    throw new Error(
+      getErrorMessage(
+        data,
+        "Failed to load notifications.",
+        res.status
+      )
+    );
   }
 
-  const data = await res.json();
   return Array.isArray(data) ? data : [];
 }
 
-export async function markNotificationAsRead(notificationId) {
-  const res = await fetch(`/api/notifications/${notificationId}/read`, {
-    method: 'PUT',
-    headers: authHeaders(),
-  });
+export async function markNotificationAsRead(
+  notificationId
+) {
+  const res = await fetch(
+    `/api/notifications/${notificationId}/read`,
+    {
+      method: "PUT",
+      headers: authHeaders(),
+    }
+  );
+
+  const data = await readResponse(res);
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-    throw new Error(error.message || 'Gagal menandai notifikasi');
+    throw new Error(
+      getErrorMessage(
+        data,
+        "Failed to mark notification as read.",
+        res.status
+      )
+    );
   }
 
-  return res.json();
+  return data;
 }
 
 export async function markAllNotificationsAsRead() {
-  const res = await fetch('/api/notifications/read-all', {
-    method: 'PUT',
-    headers: authHeaders(),
-  });
+  const res = await fetch(
+    "/api/notifications/read-all",
+    {
+      method: "PUT",
+      headers: authHeaders(),
+    }
+  );
+
+  const data = await readResponse(res);
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
     throw new Error(
-      error.message || 'Gagal menandai semua notifikasi'
+      getErrorMessage(
+        data,
+        "Failed to mark all notifications as read.",
+        res.status
+      )
     );
   }
 
-  return res.json();
+  return data;
 }
 
 export async function getCurrentTrainerProfile() {
-  const res = await fetch('/api/users/me', {
-    cache: 'no-store',
-    headers: authHeaders(),
-  });
+  const res = await fetch(
+    "/api/users/me",
+    {
+      cache: "no-store",
+      headers: authHeaders(),
+    }
+  );
+
+  const data = await readResponse(res);
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-
     throw new Error(
-      error.message || 'Gagal mengambil profil trainer'
+      getErrorMessage(
+        data,
+        "Failed to load trainer profile.",
+        res.status
+      )
     );
   }
 
-  return res.json();
+  return data;
 }
 
-export async function updateTrainerProfile(fullName) {
-  const res = await fetch('/api/users/me', {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      ...authHeaders(),
-    },
-    body: JSON.stringify({
-      full_name: fullName,
-    }),
-  });
+export async function updateTrainerProfile(
+  fullName
+) {
+  const res = await fetch(
+    "/api/users/me",
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type":
+          "application/json",
+        ...authHeaders(),
+      },
+      body: JSON.stringify({
+        full_name: fullName,
+      }),
+    }
+  );
+
+  const data = await readResponse(res);
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-
     throw new Error(
-      error.message || 'Gagal memperbarui profil trainer'
+      getErrorMessage(
+        data,
+        "Failed to update trainer profile.",
+        res.status
+      )
     );
   }
 
-  return res.json();
+  return data;
 }
 
 export async function updateTrainerNotifications({
@@ -273,52 +650,75 @@ export async function updateTrainerNotifications({
   notify_deadline,
   notify_certificate,
 }) {
-  const res = await fetch('/api/users/me/notifications', {
-    method: 'PUT',
-    headers: {
-      'Content-Type': 'application/json',
-      ...authHeaders(),
-    },
-    body: JSON.stringify({
-      notify_course,
-      notify_deadline,
-      notify_certificate,
-    }),
-  });
+  const res = await fetch(
+    "/api/users/me/notifications",
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type":
+          "application/json",
+        ...authHeaders(),
+      },
+      body: JSON.stringify({
+        notify_course,
+        notify_deadline,
+        notify_certificate,
+      }),
+    }
+  );
+
+  const data = await readResponse(res);
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-
     throw new Error(
-      error.message ||
-        'Gagal memperbarui preferensi notifikasi'
+      getErrorMessage(
+        data,
+        "Failed to update notification preferences.",
+        res.status
+      )
     );
   }
 
-  return res.json();
+  return data;
 }
 
-export async function uploadTrainerPhoto(file) {
+export async function uploadTrainerPhoto(
+  file
+) {
   if (!(file instanceof File)) {
-    throw new Error('File foto tidak valid');
+    throw new Error(
+      "Invalid photo file."
+    );
   }
 
   const formData = new FormData();
-  formData.append('photo', file);
 
-  const res = await fetch('/api/users/me/photo', {
-    method: 'POST',
-    headers: authHeaders(),
-    body: formData,
-  });
+  formData.append(
+    "photo",
+    file,
+    file.name
+  );
+
+  const res = await fetch(
+    "/api/users/me/photo",
+    {
+      method: "POST",
+      headers: authHeaders(),
+      body: formData,
+    }
+  );
+
+  const data = await readResponse(res);
 
   if (!res.ok) {
-    const error = await res.json().catch(() => ({}));
-
     throw new Error(
-      error.message || 'Gagal mengunggah foto trainer'
+      getErrorMessage(
+        data,
+        "Failed to upload trainer photo.",
+        res.status
+      )
     );
   }
 
-  return res.json();
+  return data;
 }

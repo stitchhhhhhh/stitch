@@ -1,72 +1,109 @@
+function formatStatus(status) {
+  const value = String(status || "unknown");
+
+  return value
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (letter) =>
+      letter.toUpperCase()
+    );
+}
+
+function formatDate(value) {
+  if (!value) return "";
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "";
+  }
+
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+  });
+}
+
 export default function CoursePipelineCard({
   course,
   onAction,
+  disabled = false,
 }) {
+  const progress = Math.min(
+    100,
+    Math.max(0, Number(course.progress) || 0)
+  );
+
   return (
-    <div
-      className={`bg-white rounded-3xl border-l-4 ${course.border} shadow-sm p-6`}
+    <article
+      className={`rounded-3xl border-l-4 bg-white p-6 shadow-sm ${course.border || "border-indigo-200"}`}
     >
-      <div className="flex justify-between items-center">
-        <span className="px-3 py-1 rounded-full text-xs bg-gray-100 font-semibold text-gray-700">
-          {course.status}
+      <div className="flex items-center justify-between gap-4">
+        <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
+          {formatStatus(course.status)}
         </span>
 
-        {course.date && (
+        {course.deadline && (
           <span className="text-sm text-gray-500">
-            {course.date}
+            Deadline: {formatDate(course.deadline)}
           </span>
         )}
       </div>
 
-      <h2 className="text-2xl font-bold mt-5">
-        {course.title}
+      <h2 className="mt-5 text-2xl font-bold">
+        {course.title || "Untitled Course"}
       </h2>
 
-      {course.trainer && (
-        <p className="text-gray-500 mt-2">
-          👤 Trainer: {course.trainer}
-        </p>
-      )}
+      <p className="mt-2 text-gray-500">
+        Trainer:{" "}
+        {course.trainer || "Not assigned"}
+      </p>
 
-      {course.progress !== null &&
-        course.progress !== undefined && (
-          <div className="mt-6">
-            <div className="flex justify-between text-sm mb-2">
-              <span>Progress</span>
-              <span>{course.progress}%</span>
-            </div>
+      <div className="mt-6">
+        <div className="mb-2 flex justify-between text-sm">
+          <span>Progress</span>
+          <span>{progress}%</span>
+        </div>
 
-            <div className="w-full h-2 bg-gray-200 rounded-full">
-              <div
-                className="h-2 rounded-full bg-indigo-600"
-                style={{
-                  width: `${course.progress}%`,
-                }}
-              />
-            </div>
-          </div>
-        )}
+        <div className="h-2 w-full rounded-full bg-gray-200">
+          <div
+            className="h-2 rounded-full bg-indigo-600"
+            style={{
+              width: `${progress}%`,
+            }}
+          />
+        </div>
+      </div>
 
-      <div className="flex gap-3 mt-8 flex-wrap">
+      <p className="mt-3 text-sm text-gray-500">
+        Enrollments:{" "}
+        {Number(course.enrollmentCount) || 0}
+      </p>
+
+      <div className="mt-8 flex flex-wrap gap-3">
         {course.action1 && (
           <button
             type="button"
+            disabled={disabled}
             onClick={() =>
               onAction(course, course.action1)
             }
-            className="px-5 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition"
+            className="rounded-xl bg-indigo-600 px-5 py-2 text-white transition hover:bg-indigo-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {course.action1}
+            {disabled
+              ? "Updating..."
+              : course.action1}
           </button>
         )}
 
         {course.action2 && (
           <button
             type="button"
+            disabled={disabled}
             onClick={() =>
               onAction(course, course.action2)
             }
-            className="px-5 py-2 border rounded-xl hover:bg-gray-100 transition"
+            className="rounded-xl border px-5 py-2 transition hover:bg-gray-100 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {course.action2}
           </button>
@@ -75,15 +112,16 @@ export default function CoursePipelineCard({
         {course.action3 && (
           <button
             type="button"
+            disabled={disabled}
             onClick={() =>
               onAction(course, course.action3)
             }
-            className="ml-auto text-red-600 font-semibold hover:text-red-700"
+            className="ml-auto font-semibold text-red-600 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {course.action3}
           </button>
         )}
       </div>
-    </div>
+    </article>
   );
 }

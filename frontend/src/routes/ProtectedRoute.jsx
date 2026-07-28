@@ -1,15 +1,63 @@
-import { Navigate, Outlet } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Navigate, Outlet } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
-// Membungkus DashboardLayout. Kalau belum login, lempar balik ke /login.
-// Begitu backend auth siap (cek token di localStorage/cookie, dsb),
-// logic pengecekannya tinggal ditambah di sini — komponen lain tidak berubah.
-export default function ProtectedRoute() {
-  const { isAuthenticated } = useAuth();
+export default function ProtectedRoute({
+  allowedRoles = []
+}) {
+  const {
+    isAuthenticated,
+    isAuthLoading,
+    roleName
+  } = useAuth()
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
+  if (isAuthLoading) {
+    return (
+      <div className="auth-loading-screen">
+        Loading...
+      </div>
+    )
   }
 
-  return <Outlet />;
+  if (!isAuthenticated) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+      />
+    )
+  }
+
+  const normalizedAllowedRoles =
+    allowedRoles.map((role) =>
+      String(role).toUpperCase()
+    )
+
+  const normalizedCurrentRole =
+    String(roleName || '').toUpperCase()
+
+  if (
+    normalizedAllowedRoles.length > 0 &&
+    !normalizedAllowedRoles.includes(
+      normalizedCurrentRole
+    )
+  ) {
+    const rolePaths = {
+      EMPLOYEE: '/employee',
+      MANAGER: '/manager',
+      TRAINER: '/trainer',
+      HR: '/hr'
+    }
+
+    const destination =
+      rolePaths[normalizedCurrentRole] || '/login'
+
+    return (
+      <Navigate
+        to={destination}
+        replace
+      />
+    )
+  }
+
+  return <Outlet />
 }

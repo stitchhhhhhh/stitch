@@ -39,7 +39,7 @@ export default function Analytics() {
         setError("");
 
         if (!departmentId) {
-          throw new Error("Department ID tidak ditemukan");
+          throw new Error("Department ID was not found");
         }
 
         const [
@@ -159,7 +159,11 @@ export default function Analytics() {
 
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-8">
-          <CompletionTrendChart />
+          <CompletionTrendChart
+  trend={
+    departmentAnalytics?.completionTrend ?? []
+  }
+/>
         </div>
 
         <div className="col-span-4 space-y-6">
@@ -193,7 +197,12 @@ export default function Analytics() {
 
       <div className="grid grid-cols-12 gap-6">
         <div className="col-span-8 space-y-6">
-          <EmployeeTrendChart />
+          <EmployeeTrendChart
+  trend={
+    departmentAnalytics
+      ?.employeeParticipationTrend ?? []
+  }
+/>
 
           <PerformanceSummary
             totalEnrollments={

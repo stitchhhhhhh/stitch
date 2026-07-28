@@ -43,6 +43,48 @@ const STATUS_CONFIG = {
   },
 };
 
+function CourseRequestsSkeleton() {
+  return (
+    <div
+      className="space-y-8 animate-pulse"
+      aria-label="Loading course requests"
+    >
+      <div className="space-y-3">
+        <div className="h-10 w-72 rounded-xl bg-gray-200" />
+        <div className="h-5 w-96 max-w-full rounded-lg bg-gray-200" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map(
+          (_, index) => (
+            <div
+              key={index}
+              className="h-32 rounded-3xl bg-gray-200"
+            />
+          )
+        )}
+      </div>
+
+      <div className="h-20 rounded-2xl bg-gray-200" />
+
+      <div className="grid grid-cols-1 gap-8 xl:grid-cols-3">
+        <div className="space-y-6 xl:col-span-2">
+          {Array.from({ length: 3 }).map(
+            (_, index) => (
+              <div
+                key={index}
+                className="h-52 rounded-3xl bg-gray-200"
+              />
+            )
+          )}
+        </div>
+
+        <div className="h-[520px] rounded-3xl bg-gray-200" />
+      </div>
+    </div>
+  );
+}
+
 function formatDate(value) {
   if (!value) return "-";
 
@@ -265,33 +307,23 @@ export default function CourseRequests() {
     }
   }
 
-  async function handleAccept(request) {
-    const confirmed = window.confirm(
-      `Accept request "${request.title}"?`
-    );
+async function handleAccept(request) {
+  await changeRequestStatus(
+    request,
+    "in_progress"
+  );
+}
 
-    if (!confirmed) return;
-
-    await changeRequestStatus(request, "in_progress");
-  }
-
-  async function handleReject(request) {
-    const confirmed = window.confirm(
-      `Cancel request "${request.title}"?`
-    );
-
-    if (!confirmed) return;
-
-    await changeRequestStatus(request, "cancelled");
-  }
+async function handleReject(request) {
+  await changeRequestStatus(
+    request,
+    "cancelled"
+  );
+}
 
   if (loading) {
-    return (
-      <div className="flex h-64 items-center justify-center text-gray-500">
-        Loading course requests...
-      </div>
-    );
-  }
+  return <CourseRequestsSkeleton />;
+}
 
   return (
     <div className="space-y-8">

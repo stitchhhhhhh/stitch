@@ -22,7 +22,7 @@ export default function DevelopmentPipeline({ courses = [] }) {
       </div>
 
       {active.length === 0 ? (
-        <p className="text-gray-400 text-sm">Tidak ada kursus dalam pengembangan.</p>
+        <p className="text-gray-400 text-sm">No courses in development.</p>
       ) : (
         <div className="space-y-7">
           {active.map((course) => {

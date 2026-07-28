@@ -44,7 +44,7 @@ export default function RequestTrainerModal({ programs, onClose, onRequested }) 
               onChange={(e) => setProgramId(e.target.value)}
               className="w-full mt-1 border rounded-xl px-4 py-3"
             >
-              <option value="">Pilih program...</option>
+              <option value="">Select a program...</option>
               {programs.map((p) => (
                 <option key={p.id} value={p.id}>
                   {p.program_name}
@@ -60,7 +60,7 @@ export default function RequestTrainerModal({ programs, onClose, onRequested }) 
               onChange={(e) => setTrainerId(e.target.value)}
               className="w-full mt-1 border rounded-xl px-4 py-3"
             >
-              <option value="">Pilih trainer...</option>
+              <option value="">Select a trainer...</option>
               {trainers.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.full_name} ({t.email})

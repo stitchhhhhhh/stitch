@@ -1,59 +1,94 @@
-import { deadlines } from "./departmentTrainingData";
+function formatDeadline(value) {
+  if (!value) {
+    return {
+      month: "--",
+      day: "--",
+      fullDate: "No deadline",
+    };
+  }
 
-export default function UpcomingDeadlines() {
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return {
+      month: "--",
+      day: "--",
+      fullDate: "Invalid deadline",
+    };
+  }
+
+  return {
+    month: date
+      .toLocaleString("en-US", {
+        month: "short",
+      })
+      .toUpperCase(),
+    day: String(date.getDate()).padStart(2, "0"),
+    fullDate: date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    }),
+  };
+}
+
+export default function UpcomingDeadlines({
+  deadlines = [],
+}) {
+  const safeDeadlines = Array.isArray(deadlines)
+    ? deadlines
+    : [];
 
   return (
-
-    <div className="bg-white rounded-3xl shadow-sm p-6">
-
-      <h2 className="font-bold text-xl mb-6">
+    <section className="rounded-3xl bg-white p-6 shadow-sm">
+      <h2 className="mb-6 text-xl font-bold">
         Upcoming Deadlines
       </h2>
 
-      <div className="space-y-6">
+      {safeDeadlines.length === 0 ? (
+        <p className="text-sm text-gray-500">
+          No upcoming deadlines.
+        </p>
+      ) : (
+        <div className="space-y-6">
+          {safeDeadlines.map((item) => {
+            const date = formatDeadline(
+              item.deadline
+            );
 
-        {deadlines.map((item, index) => (
+            return (
+              <div
+                key={
+                  item.courseId ||
+                  `${item.title}-${item.deadline}`
+                }
+                className="flex gap-4"
+              >
+                <div className="flex h-14 w-14 flex-col items-center justify-center rounded-xl bg-indigo-100">
+                  <div className="text-xs">
+                    {date.month}
+                  </div>
 
-          <div
-            key={index}
-            className="flex gap-4"
-          >
+                  <div className="font-bold">
+                    {date.day}
+                  </div>
+                </div>
 
-            <div className="w-14 h-14 rounded-xl bg-indigo-100 flex flex-col justify-center items-center">
+                <div>
+                  <h3 className="font-semibold">
+                    {item.title ||
+                      "Untitled course"}
+                  </h3>
 
-              <div className="text-xs">
-                {item.month}
+                  <p className="text-sm text-gray-500">
+                    {date.fullDate}
+                  </p>
+                </div>
               </div>
-
-              <div className="font-bold">
-                {item.day}
-              </div>
-
-            </div>
-
-            <div>
-
-              <h4 className="font-semibold">
-                {item.title}
-              </h4>
-
-              <p className="text-sm text-gray-500">
-                {item.subtitle}
-              </p>
-
-            </div>
-
-          </div>
-
-        ))}
-
-      </div>
-
-      <button className="text-indigo-600 font-semibold mt-8">
-        View All Dates
-      </button>
-
-    </div>
-
+            );
+          })}
+        </div>
+      )}
+    </section>
   );
 }

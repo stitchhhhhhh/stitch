@@ -12,37 +12,28 @@ const icons = {
   award: Award,
 };
 
-export default function OverviewCards({
-  analytics,
-  summary,
-}) {
+export default function OverviewCards({ summary = {} }) {
+  const completionRate = Number(summary.completionRate) || 0;
+
   const overviewData = [
     {
       title: "TOTAL EMPLOYEES",
-      value:
-        analytics?.totalEmployees ??
-        summary?.employees ??
-        0,
+      value: summary.totalEmployees ?? 0,
       icon: "users",
     },
     {
       title: "AVG. COMPLETION",
-      value:
-        analytics?.completionRate ??
-        `${summary?.completionRate ?? 0}%`,
+      value: `${completionRate.toFixed(2)}%`,
       icon: "chart",
     },
     {
       title: "TOTAL COURSES",
-      value:
-        analytics?.totalCourses ??
-        summary?.courses ??
-        0,
+      value: summary.totalCourses ?? 0,
       icon: "book",
     },
     {
       title: "CERTIFICATES ISSUED",
-      value: summary?.certificates ?? 0,
+      value: summary.certificatesIssued ?? 0,
       icon: "award",
     },
   ];

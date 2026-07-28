@@ -1,213 +1,25 @@
-import {
-  BarChart3,
-  Download,
-  Users,
-  BookOpen,
-  GraduationCap,
-  TrendingUp,
-} from "lucide-react";
+import { useEffect, useState } from "react";
+import { Download, Users, BookOpen, GraduationCap, TrendingUp } from "lucide-react";
+import { exportHRReport, getHROverview } from "../../services/hrService";
 
 export default function Reports() {
-  return (
-    <div className="space-y-8">
-
-      {/* Header */}
-      <div className="flex justify-between items-center">
-
-        <div>
-          <h1 className="text-4xl font-bold text-[#253B80]">
-            Training Reports
-          </h1>
-
-          <p className="text-gray-500 mt-2">
-            Generate and export training performance reports across the
-            organization.
-          </p>
-        </div>
-
-        <button className="bg-[#2F3FE4] text-white px-6 py-3 rounded-xl flex items-center gap-2 hover:bg-[#2433C7]">
-          <Download size={18} />
-          Export Report
-        </button>
-
-      </div>
-
-      {/* Statistics */}
-
-      <div className="grid grid-cols-4 gap-6">
-
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <Users className="text-[#2F3FE4]" size={30} />
-          <p className="text-gray-500 mt-4">Employees Trained</p>
-          <h2 className="text-3xl font-bold mt-1">1,248</h2>
-        </div>
-
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <BookOpen className="text-green-600" size={30} />
-          <p className="text-gray-500 mt-4">Courses Completed</p>
-          <h2 className="text-3xl font-bold mt-1">324</h2>
-        </div>
-
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <GraduationCap className="text-orange-500" size={30} />
-          <p className="text-gray-500 mt-4">Certificates Issued</p>
-          <h2 className="text-3xl font-bold mt-1">289</h2>
-        </div>
-
-        <div className="bg-white rounded-2xl p-6 shadow-sm">
-          <TrendingUp className="text-purple-600" size={30} />
-          <p className="text-gray-500 mt-4">Completion Rate</p>
-          <h2 className="text-3xl font-bold mt-1">91%</h2>
-        </div>
-
-      </div>
-
-      {/* Charts */}
-
-      <div className="grid grid-cols-3 gap-6">
-
-        <div className="col-span-2 bg-white rounded-2xl shadow-sm p-6">
-
-          <div className="flex justify-between">
-
-            <h2 className="font-bold text-xl">
-              Monthly Training Activity
-            </h2>
-
-            <BarChart3 className="text-[#2F3FE4]" />
-
-          </div>
-
-          <div className="h-72 flex items-center justify-center text-gray-400">
-
-            Monthly Chart (Chart.js / Recharts)
-
-          </div>
-
-        </div>
-
-        <div className="bg-white rounded-2xl shadow-sm p-6">
-
-          <h2 className="font-bold text-xl mb-6">
-            Top Departments
-          </h2>
-
-          <div className="space-y-5">
-
-            <div>
-              <div className="flex justify-between">
-                <span>IT</span>
-                <span>95%</span>
-              </div>
-
-              <div className="h-2 bg-gray-200 rounded-full mt-2">
-                <div className="h-2 w-[95%] rounded-full bg-[#2F3FE4]" />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between">
-                <span>Finance</span>
-                <span>88%</span>
-              </div>
-
-              <div className="h-2 bg-gray-200 rounded-full mt-2">
-                <div className="h-2 w-[88%] rounded-full bg-green-500" />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between">
-                <span>HR</span>
-                <span>84%</span>
-              </div>
-
-              <div className="h-2 bg-gray-200 rounded-full mt-2">
-                <div className="h-2 w-[84%] rounded-full bg-orange-500" />
-              </div>
-            </div>
-
-            <div>
-              <div className="flex justify-between">
-                <span>Marketing</span>
-                <span>76%</span>
-              </div>
-
-              <div className="h-2 bg-gray-200 rounded-full mt-2">
-                <div className="h-2 w-[76%] rounded-full bg-pink-500" />
-              </div>
-            </div>
-
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* Recent Reports */}
-
-      <div className="bg-white rounded-2xl shadow-sm p-6">
-
-        <h2 className="text-2xl font-bold mb-6">
-          Recent Reports
-        </h2>
-
-        <table className="w-full">
-
-          <thead>
-
-            <tr className="border-b">
-
-              <th className="text-left py-3">Report</th>
-              <th className="text-left">Department</th>
-              <th className="text-left">Generated</th>
-              <th className="text-left">Status</th>
-
-            </tr>
-
-          </thead>
-
-          <tbody>
-
-            <tr className="border-b">
-              <td className="py-4">Q2 Training Summary</td>
-              <td>All Departments</td>
-              <td>July 12, 2026</td>
-              <td>
-                <span className="bg-green-100 text-green-700 px-3 py-1 rounded-full text-sm">
-                  Completed
-                </span>
-              </td>
-            </tr>
-
-            <tr className="border-b">
-              <td className="py-4">Cyber Security Report</td>
-              <td>IT</td>
-              <td>July 10, 2026</td>
-              <td>
-                <span className="bg-blue-100 text-blue-700 px-3 py-1 rounded-full text-sm">
-                  Exported
-                </span>
-              </td>
-            </tr>
-
-            <tr>
-              <td className="py-4">Leadership Progress</td>
-              <td>Management</td>
-              <td>July 8, 2026</td>
-              <td>
-                <span className="bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full text-sm">
-                  Pending
-                </span>
-              </td>
-            </tr>
-
-          </tbody>
-
-        </table>
-
-      </div>
-
-    </div>
-  );
+  const [data, setData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [exporting, setExporting] = useState(false);
+  useEffect(() => { getHROverview().then(setData).catch((e) => setError(e.message)).finally(() => setLoading(false)); }, []);
+  async function handleExport() { try { setExporting(true); const blob = await exportHRReport("pdf"); const url = URL.createObjectURL(blob); const a = document.createElement("a"); a.href = url; a.download = "training-report.pdf"; a.click(); URL.revokeObjectURL(url); } catch (e) { alert(e.message); } finally { setExporting(false); } }
+  if (loading) return <div className="bg-white rounded-3xl p-8">Loading reports...</div>;
+  if (error) return <div className="bg-red-50 text-red-600 rounded-3xl p-8">{error}</div>;
+  const summary = data?.summary || {};
+  const stats = [
+    { label: "Employees Trained", value: summary.activeLearners || 0, Icon: Users },
+    { label: "Courses Completed", value: summary.completedEnrollments || 0, Icon: BookOpen },
+    { label: "Certificates Issued", value: summary.certificatesIssued || 0, Icon: GraduationCap },
+    { label: "Completion Rate", value: `${summary.completionRate || 0}%`, Icon: TrendingUp },
+  ];
+  return <div className="space-y-8"><div className="flex justify-between items-center"><div><h1 className="text-4xl font-bold text-[#253B80]">Training Reports</h1><p className="text-gray-500 mt-2">Generate and export training performance reports across the organization.</p></div><button onClick={handleExport} disabled={exporting} className="bg-[#2F3FE4] text-white px-6 py-3 rounded-xl flex items-center gap-2 disabled:opacity-50"><Download size={18}/>{exporting ? "Exporting..." : "Export Report"}</button></div>
+    <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">{stats.map(({label,value,Icon}) => <div key={label} className="bg-white rounded-2xl p-6 shadow-sm"><Icon className="text-[#2F3FE4]" size={30}/><p className="text-gray-500 mt-4">{label}</p><h2 className="text-3xl font-bold mt-1">{value}</h2></div>)}</div>
+    <div className="bg-white rounded-2xl shadow-sm p-6"><h2 className="text-2xl font-bold mb-6">Department Report</h2>{(data?.departments || []).length === 0 ? <div className="py-12 text-center text-gray-400">No report data available.</div> : <table className="w-full"><thead><tr className="border-b text-left"><th className="py-3">Department</th><th>Learners</th><th>Completion Rate</th><th>Average Score</th></tr></thead><tbody>{data.departments.map((d) => <tr key={d.id} className="border-b"><td className="py-4">{d.name}</td><td>{d.learners}</td><td>{d.completionRate}%</td><td>{d.averageScore}</td></tr>)}</tbody></table>}</div>
+  </div>;
 }

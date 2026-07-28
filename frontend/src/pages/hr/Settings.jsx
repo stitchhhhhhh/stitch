@@ -1,93 +1,23 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { getCurrentHRProfile, updateHRNotifications, updateHRProfile } from "../../services/hrService";
 
-import ProfileCard from "../../components/hr/settings/ProfileCard";
-import AccountSettings from "../../components/hr/settings/AccountSettings";
-import SecurityCard from "../../components/hr/settings/SecurityCard";
-import NotificationSettings from "../../components/hr/settings/NotificationSettings";
-import ReportSettings from "../../components/hr/settings/ReportSettings";
-import BottomActions from "../../components/hr/settings/BottomActions";
+function Toggle({ checked, onChange }) { return <button type="button" onClick={() => onChange(!checked)} className={`w-12 h-7 rounded-full transition ${checked ? "bg-[#2F3FE4]" : "bg-gray-300"}`}><div className={`w-5 h-5 bg-white rounded-full transition ${checked ? "translate-x-6" : "translate-x-1"}`} /></button>; }
 
 export default function Settings() {
+  const [profile, setProfile] = useState(null);
+  const [fullName, setFullName] = useState("");
+  const [preferences, setPreferences] = useState({ notify_course: false, notify_deadline: false, notify_certificate: false });
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-
-  async function handleSave() {
-    try {
-      setSaving(true);
-
-      await new Promise((resolve) =>
-        setTimeout(resolve, 500)
-      );
-
-      alert("HR settings berhasil disimpan.");
-    } catch (error) {
-      alert(
-        error?.message ||
-          "Gagal menyimpan HR settings."
-      );
-    } finally {
-      setSaving(false);
-    }
-  }
-
-  function handleReset() {
-    const confirmed = window.confirm(
-      "Reset semua pengaturan HR?"
-    );
-
-    if (!confirmed) return;
-
-    window.location.reload();
-  }
-
-  function handleCancel() {
-    const confirmed = window.confirm(
-      "Batalkan semua perubahan?"
-    );
-
-    if (!confirmed) return;
-
-    window.location.reload();
-  }
-
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-4xl font-bold text-[#253B80]">
-          Settings
-        </h1>
-
-        <button
-          type="button"
-          onClick={handleSave}
-          disabled={saving}
-          className="bg-[#2F3FE4] text-white px-6 py-3 rounded-xl disabled:opacity-50"
-        >
-          {saving ? "Saving..." : "Save Preferences"}
-        </button>
-      </div>
-
-      <ProfileCard />
-
-      <div className="grid grid-cols-12 gap-6">
-        <div className="col-span-7">
-          <AccountSettings />
-        </div>
-
-        <div className="col-span-5">
-          <SecurityCard />
-        </div>
-      </div>
-
-      <NotificationSettings />
-
-      <ReportSettings />
-
-      <BottomActions
-        onReset={handleReset}
-        onCancel={handleCancel}
-        onSave={handleSave}
-        saving={saving}
-      />
-    </div>
-  );
+  const [error, setError] = useState("");
+  async function load() { try { setLoading(true); const data = await getCurrentHRProfile(); setProfile(data); setFullName(data.full_name || ""); setPreferences({ notify_course: Boolean(data.notify_course), notify_deadline: Boolean(data.notify_deadline), notify_certificate: Boolean(data.notify_certificate) }); } catch (e) { setError(e.message); } finally { setLoading(false); } }
+  useEffect(() => { load(); }, []);
+  async function handleSave() { try { setSaving(true); await Promise.all([updateHRProfile(fullName), updateHRNotifications(preferences)]); await load(); alert("HR settings were saved successfully."); } catch (e) { alert(e.message); } finally { setSaving(false); } }
+  if (loading) return <div className="bg-white rounded-3xl p-8">Loading settings...</div>;
+  if (error) return <div className="bg-red-50 text-red-600 rounded-3xl p-8">{error}</div>;
+  return <div className="space-y-6"><div className="flex justify-between items-center"><h1 className="text-4xl font-bold text-[#253B80]">Settings</h1><button onClick={handleSave} disabled={saving} className="bg-[#2F3FE4] text-white px-6 py-3 rounded-xl disabled:opacity-50">{saving ? "Saving..." : "Save Preferences"}</button></div>
+    <div className="bg-white rounded-3xl p-8 shadow-sm"><h2 className="font-semibold text-xl mb-8">Profile Information</h2><div className="flex gap-8"><div className="w-32 h-32 rounded-full bg-indigo-100 flex items-center justify-center text-4xl font-bold text-[#2F3FE4] overflow-hidden">{profile.photo_url ? <img src={profile.photo_url} alt="HR profile" className="w-full h-full object-cover"/> : (profile.full_name?.[0] || "H")}</div><div className="grid grid-cols-1 md:grid-cols-2 gap-5 flex-1"><label className="text-xs font-bold text-gray-500">FULL NAME<input value={fullName} onChange={(e) => setFullName(e.target.value)} className="mt-2 w-full border rounded-xl px-4 py-3 text-base font-normal text-gray-900"/></label><label className="text-xs font-bold text-gray-500">COMPANY EMAIL<input value={profile.email || ""} disabled className="mt-2 w-full border rounded-xl px-4 py-3 text-base font-normal text-gray-500 bg-gray-50"/></label><label className="text-xs font-bold text-gray-500">DEPARTMENT<input value={profile.department?.name || "Not assigned"} disabled className="mt-2 w-full border rounded-xl px-4 py-3 text-base font-normal text-gray-500 bg-gray-50"/></label><label className="text-xs font-bold text-gray-500">ROLE<input value={profile.role?.name || "HR"} disabled className="mt-2 w-full border rounded-xl px-4 py-3 text-base font-normal text-gray-500 bg-gray-50"/></label></div></div></div>
+    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6"><div className="bg-white rounded-3xl p-8 shadow-sm"><h2 className="font-semibold text-xl mb-6">Account Settings</h2><div className="space-y-4"><div className="border rounded-2xl p-5"><h3 className="font-semibold">Authentication</h3><p className="text-gray-500 text-sm">Single Sign-On with the company account</p></div><div className="border rounded-2xl p-5 flex justify-between"><div><h3 className="font-semibold">Account Status</h3><p className="text-gray-500 text-sm">Current database account status</p></div><span className="text-[#2F3FE4] font-semibold uppercase">{profile.status || "inactive"}</span></div></div></div><div className="bg-white rounded-3xl p-8 shadow-sm"><h2 className="font-semibold text-xl mb-6">Security</h2><p className="text-gray-500">Access is protected by company SSO and role-based access control.</p><div className="border-t mt-6 pt-6"><p className="text-xs text-gray-500 uppercase">Role</p><p className="font-semibold mt-2">{profile.role?.name || "HR"}</p></div></div></div>
+    <div className="bg-white rounded-3xl p-8 shadow-sm"><h2 className="font-semibold text-xl mb-8">Notification Preferences</h2><div className="space-y-6">{[["Course notifications","notify_course"],["Deadline reminders","notify_deadline"],["Certificate notifications","notify_certificate"]].map(([title,key]) => <div key={key} className="flex justify-between items-center border-b pb-5"><div><h3 className="font-semibold">{title}</h3><p className="text-gray-500 text-sm">Saved in your user profile.</p></div><Toggle checked={preferences[key]} onChange={(value) => setPreferences((current) => ({...current,[key]:value}))}/></div>)}</div></div>
+  </div>;
 }

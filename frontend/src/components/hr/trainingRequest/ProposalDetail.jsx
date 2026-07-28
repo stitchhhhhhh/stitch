@@ -21,7 +21,7 @@ const handleReview = async (status) => {
       : "reject";
 
   const confirmed = window.confirm(
-    `Apakah kamu yakin ingin ${actionLabel} proposal "${proposal.proposal_title}"?`
+    `Are you sure you want to ${actionLabel} proposal "${proposal.proposal_title}"?`
   );
 
   if (!confirmed) return;
@@ -34,8 +34,8 @@ const handleReview = async (status) => {
 
     alert(
       status === "approved"
-        ? "Proposal berhasil disetujui."
-        : "Proposal berhasil ditolak."
+        ? "The proposal was approved successfully."
+        : "The proposal was rejected successfully."
     );
 
     if (onRefresh) {
@@ -46,7 +46,7 @@ const handleReview = async (status) => {
 
     alert(
       err?.message ||
-        "Gagal memperbarui proposal."
+        "Failed to update the proposal."
     );
   }
 };

@@ -1,5 +1,7 @@
 const passport = require('passport')
-const { Strategy: GoogleStrategy } = require('passport-google-oauth20')
+const {
+  Strategy: GoogleStrategy
+} = require('passport-google-oauth20')
 const { PrismaClient } = require('@prisma/client')
 
 const prisma = new PrismaClient()
@@ -13,7 +15,9 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        const email = profile.emails?.[0]?.value?.toLowerCase()
+        const email = profile.emails?.[0]?.value
+          ?.trim()
+          .toLowerCase()
 
         if (!email) {
           return done(null, false, {
@@ -44,33 +48,13 @@ passport.use(
         }
 
         return done(null, user)
-      } catch (err) {
-        return done(err)
+      } catch (error) {
+        console.error('GOOGLE PASSPORT ERROR:', error)
+
+        return done(error)
       }
     }
   )
 )
-
-passport.serializeUser((user, done) => {
-  done(null, user.id)
-})
-
-passport.deserializeUser(async (id, done) => {
-  try {
-    const user = await prisma.user.findUnique({
-      where: {
-        id: Number(id)
-      },
-      include: {
-        role: true,
-        department: true
-      }
-    })
-
-    done(null, user)
-  } catch (err) {
-    done(err)
-  }
-})
 
 module.exports = passport

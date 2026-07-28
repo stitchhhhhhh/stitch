@@ -339,3 +339,75 @@ export async function getDepartmentEnrollments(
     pagination: result.pagination ?? null,
   };
 }
+
+export async function getManagerDepartmentTraining() {
+  const response = await fetch(
+    "/api/courses/manager/department-training",
+    {
+      headers: authHeaders(),
+    }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result.message ||
+        "Failed to load department training data"
+    );
+  }
+
+  return {
+    stats: {
+      waitingForTrainer:
+        Number(result.stats?.waitingForTrainer) || 0,
+      inDevelopment:
+        Number(result.stats?.inDevelopment) || 0,
+      pendingReview:
+        Number(result.stats?.pendingReview) || 0,
+      publishedPrograms:
+        Number(result.stats?.publishedPrograms) || 0,
+    },
+    courses: Array.isArray(result.courses)
+      ? result.courses
+      : [],
+    upcomingDeadlines: Array.isArray(
+      result.upcomingDeadlines
+    )
+      ? result.upcomingDeadlines
+      : [],
+    recentActivities: Array.isArray(
+      result.recentActivities
+    )
+      ? result.recentActivities
+      : [],
+  };
+}
+
+export async function updateManagerCourseReview(
+  courseId,
+  data
+) {
+  const response = await fetch(
+    `/api/courses/${courseId}/manager-review`,
+    {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...authHeaders(),
+      },
+      body: JSON.stringify(data),
+    }
+  );
+
+  const result = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      result.message ||
+        "Failed to update the course"
+    );
+  }
+
+  return result;
+}

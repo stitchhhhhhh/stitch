@@ -85,7 +85,7 @@ export default function TrainingRequests() {
         <div className="col-span-4 space-y-5">
           {filteredProposals.length === 0 ? (
             <div className="bg-white rounded-3xl p-8 text-center text-gray-400">
-              Tidak ada proposal dengan filter ini.
+              No proposals match this filter.
             </div>
           ) : (
             filteredProposals.map(

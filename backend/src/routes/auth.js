@@ -23,10 +23,10 @@ router.post('/login', async (req, res) => {
     const password = String(req.body?.password || '')
 
     if (!email || !password) {
-      return res.status(400).json({
-        message: 'Email dan password wajib diisi.'
-      })
-    }
+  return res.status(400).json({
+    message: 'Email and password are required.'
+  })
+}
 
     const user = await prisma.user.findUnique({
       where: {
@@ -39,23 +39,23 @@ router.post('/login', async (req, res) => {
     })
 
     if (!user) {
-      return res.status(401).json({
-        message: 'Email atau password salah.'
-      })
-    }
+  return res.status(401).json({
+    message: 'Invalid email or password.'
+  })
+}
 
     if (String(user.status).toLowerCase() !== 'active') {
-      return res.status(403).json({
-        message: 'Akun tidak aktif.'
-      })
-    }
+  return res.status(403).json({
+    message: 'This account is inactive.'
+  })
+}
 
     if (!user.password_hash) {
-      return res.status(401).json({
-        message:
-          'Akun ini belum memiliki password. Silakan login menggunakan Google.'
-      })
-    }
+  return res.status(401).json({
+    message:
+      'This account does not have a password. Please sign in with Google.'
+  })
+}
 
     const passwordValid = await bcrypt.compare(
       password,
@@ -64,7 +64,7 @@ router.post('/login', async (req, res) => {
 
     if (!passwordValid) {
       return res.status(401).json({
-        message: 'Email atau password salah.'
+        message: 'Invalid email or password.'
       })
     }
 
@@ -98,8 +98,8 @@ router.post('/login', async (req, res) => {
     console.error('EMAIL LOGIN ERROR:', err)
 
     return res.status(500).json({
-      message: 'Terjadi kesalahan saat login.'
-    })
+  message: 'An error occurred during login.'
+})
   }
 })
 
@@ -180,8 +180,10 @@ router.get('/me', authMiddleware, (req, res) => {
 // ===============================
 // Logout
 // ===============================
-router.get('/logout', (req, res) => {
-  return res.redirect(`${FRONTEND_URL}/login`)
+router.post('/logout', (req, res) => {
+  return res.status(200).json({
+    message: 'Logout successful.'
+  })
 })
 
 module.exports = router

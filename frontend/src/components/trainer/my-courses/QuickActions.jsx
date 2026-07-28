@@ -1,29 +1,34 @@
-import { useNavigate } from "react-router-dom";
-
-export default function QuickActions({ onUpload }) {
-  const navigate = useNavigate();
-
+export default function QuickActions({
+  onEdit,
+  onUpload,
+  onView,
+  disableEdit = false,
+  disableView = false,
+}) {
   const actions = [
     {
       title: "Continue Editing",
       icon: "✏️",
-      action: () => navigate("/trainer/courses?action=edit"),
+      action: onEdit,
+      disabled: disableEdit,
     },
     {
       title: "Upload Materials",
       icon: "📁",
       action: onUpload,
+      disabled: disableEdit,
     },
     {
       title: "View Course",
       icon: "👁️",
-      action: () => navigate("/trainer/courses?action=view"),
+      action: onView,
+      disabled: disableView,
     },
   ];
 
   return (
-    <div className="bg-white rounded-3xl shadow-sm p-6">
-      <h2 className="text-xl font-bold text-[#253B80] mb-6">
+    <div className="rounded-3xl bg-white p-6 shadow-sm">
+      <h2 className="mb-6 text-xl font-bold text-[#253B80]">
         Quick Actions
       </h2>
 
@@ -33,13 +38,19 @@ export default function QuickActions({ onUpload }) {
             type="button"
             key={item.title}
             onClick={item.action}
-            className="w-full flex items-center gap-4 bg-[#F7F8FF] hover:bg-[#EEF2FF] transition rounded-2xl p-4"
+            disabled={
+              item.disabled ||
+              typeof item.action !== "function"
+            }
+            className="flex w-full items-center gap-4 rounded-2xl bg-[#F7F8FF] p-4 text-left transition hover:bg-[#EEF2FF] disabled:cursor-not-allowed disabled:opacity-50"
           >
-            <div className="w-10 h-10 rounded-xl bg-white flex items-center justify-center">
+            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white">
               {item.icon}
             </div>
 
-            <span className="font-medium">{item.title}</span>
+            <span className="font-medium">
+              {item.title}
+            </span>
           </button>
         ))}
       </div>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import {
@@ -20,6 +20,46 @@ import UpcomingDeadlines from '../../components/dashboard/UpcomingDeadlines';
 import RecommendedCourses from '../../components/dashboard/RecommendedCourses';
 import LearningActivityChart from '../../components/dashboard/LearningActivityChart';
 
+function EmployeeDashboardSkeleton() {
+  return (
+    <div
+      className="space-y-6 animate-pulse"
+      aria-label="Loading employee dashboard"
+    >
+      <div className="space-y-3">
+        <div className="h-9 w-72 rounded-lg bg-gray-200" />
+        <div className="h-4 w-96 max-w-full rounded bg-gray-200" />
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div
+            key={index}
+            className="h-28 rounded-2xl border border-gray-100 bg-white p-5"
+          >
+            <div className="h-4 w-24 rounded bg-gray-200" />
+            <div className="mt-4 h-8 w-16 rounded bg-gray-200" />
+          </div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-[2fr_1fr]">
+        <div className="h-80 rounded-3xl border border-gray-100 bg-white" />
+
+        <div className="space-y-6">
+          <div className="h-36 rounded-3xl border border-gray-100 bg-white" />
+          <div className="h-36 rounded-3xl border border-gray-100 bg-white" />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
+        <div className="h-72 rounded-3xl border border-gray-100 bg-white" />
+        <div className="h-72 rounded-3xl border border-gray-100 bg-white" />
+      </div>
+    </div>
+  );
+}
+
 export default function EmployeeDashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -34,102 +74,143 @@ export default function EmployeeDashboard() {
   const [activity, setActivity] = useState({ daily: [], weekly: [] });
   const [activityRange, setActivityRange] = useState('weekly');
   const [error, setError] = useState('');
+  const [secondaryError, setSecondaryError] = useState('');
 
-  useEffect(() => {
-    let isMounted = true;
+  const resetDashboardData = useCallback(() => {
+  setMyCourses([]);
+  setRecommended([]);
+  setDeadlines([]);
+  setCertificates([]);
+  setLeaderboard([]);
+  setActivity({
+    daily: [],
+    weekly: [],
+  });
+}, []);
 
-    async function loadDashboard() {
-      if (!userId) {
-        if (isMounted) {
-          setMyCourses([]);
-          setRecommended([]);
-          setDeadlines([]);
-          setCertificates([]);
-          setLeaderboard([]);
-          setActivity({ daily: [], weekly: [] });
-          setLoading(false);
-        }
-        return;
-      }
+const loadDashboard = useCallback(async () => {
+  if (!userId) {
+    resetDashboardData();
+    setError('');
+    setSecondaryError('');
+    setLoading(false);
+    return;
+  }
 
-      try {
-        setLoading(true);
-        setError('');
+  setLoading(true);
+  setError('');
+  setSecondaryError('');
 
-        const [
-          coursesRes,
-          recommendedRes,
-          deadlinesRes,
-          certificatesRes,
-          leaderboardRes,
-          activityRes,
-        ] = await Promise.all([
-          getMyCourses(userId),
-          getRecommendedCourses(userId),
-          getUpcomingDeadlines(userId),
-          getCertificates(userId),
-          getLeaderboard(),
-          getLearningActivity(),
-        ]);
+  try {
+    const [
+      coursesResult,
+      recommendedResult,
+      deadlinesResult,
+      certificatesResult,
+      leaderboardResult,
+      activityResult,
+    ] = await Promise.allSettled([
+      getMyCourses(userId),
+      getRecommendedCourses(userId),
+      getUpcomingDeadlines(userId),
+      getCertificates(userId),
+      getLeaderboard(),
+      getLearningActivity(),
+    ]);
 
-        if (!isMounted) return;
-
-        setMyCourses(
-          Array.isArray(coursesRes) ? coursesRes : []
-        );
-        setRecommended(
-          Array.isArray(recommendedRes) ? recommendedRes : []
-        );
-        setDeadlines(
-          Array.isArray(deadlinesRes) ? deadlinesRes : []
-        );
-        setCertificates(
-          Array.isArray(certificatesRes) ? certificatesRes : []
-        );
-        setLeaderboard(
-          Array.isArray(leaderboardRes) ? leaderboardRes : []
-        );
-        setActivity(
-          activityRes && typeof activityRes === 'object'
-            ? activityRes
-            : { daily: [], weekly: [] }
-        );
-      } catch (err) {
-        if (!isMounted) return;
-
-        console.error('EMPLOYEE DASHBOARD ERROR:', err);
-
-        setError(
-          err?.message || 'Failed to load dashboard.'
-        );
-
-        setMyCourses([]);
-        setRecommended([]);
-        setDeadlines([]);
-        setCertificates([]);
-        setLeaderboard([]);
-        setActivity({ daily: [], weekly: [] });
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
+    /*
+     * The employee course list is the main dashboard data.
+     * A failure here prevents the dashboard from determining
+     * the employee's assigned training.
+     */
+    if (coursesResult.status === 'rejected') {
+      throw new Error('Unable to load your assigned courses.');
     }
 
-    loadDashboard();
+    setMyCourses(
+      Array.isArray(coursesResult.value)
+        ? coursesResult.value
+        : []
+    );
 
-    return () => {
-      isMounted = false;
-    };
-  }, [userId]);
+    setRecommended(
+      recommendedResult.status === 'fulfilled' &&
+        Array.isArray(recommendedResult.value)
+        ? recommendedResult.value
+        : []
+    );
+
+    setDeadlines(
+      deadlinesResult.status === 'fulfilled' &&
+        Array.isArray(deadlinesResult.value)
+        ? deadlinesResult.value
+        : []
+    );
+
+    setCertificates(
+      certificatesResult.status === 'fulfilled' &&
+        Array.isArray(certificatesResult.value)
+        ? certificatesResult.value
+        : []
+    );
+
+    /*
+     * Leaderboard failure must not block the dashboard.
+     * It safely falls back to an empty array.
+     */
+    setLeaderboard(
+      leaderboardResult.status === 'fulfilled' &&
+        Array.isArray(leaderboardResult.value)
+        ? leaderboardResult.value
+        : []
+    );
+
+    setActivity(
+      activityResult.status === 'fulfilled' &&
+        activityResult.value &&
+        typeof activityResult.value === 'object'
+        ? activityResult.value
+        : {
+            daily: [],
+            weekly: [],
+          }
+    );
+
+    const optionalRequestsFailed = [
+      recommendedResult,
+      deadlinesResult,
+      certificatesResult,
+      leaderboardResult,
+      activityResult,
+    ].some((result) => result.status === 'rejected');
+
+    if (optionalRequestsFailed) {
+      setSecondaryError(
+        'Some dashboard sections are temporarily unavailable. Your primary learning data is still displayed.'
+      );
+    }
+  } catch (err) {
+    console.error('EMPLOYEE DASHBOARD ERROR:', err);
+
+    resetDashboardData();
+
+    setError(
+      err instanceof Error
+        ? err.message
+        : 'Unable to load the employee dashboard.'
+    );
+  } finally {
+    setLoading(false);
+  }
+}, [resetDashboardData, userId]);
+
+useEffect(() => {
+  loadDashboard();
+}, [loadDashboard]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64 text-gray-400">
-        Loading dashboard...
-      </div>
-    );
-  }
+  return <EmployeeDashboardSkeleton />;
+}
 
   if (error) {
     return (
@@ -142,7 +223,7 @@ export default function EmployeeDashboard() {
 
         <button
           type="button"
-          onClick={() => window.location.reload()}
+          onClick={loadDashboard}
           className="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
         >
           Try Again
@@ -162,6 +243,23 @@ export default function EmployeeDashboard() {
         Welcome back{user?.full_name ? `, ${user.full_name}` : ''}. Here's what's happening with
         your learning profile.
       </p>
+
+      {secondaryError && (
+  <div
+    role="status"
+    className="mt-5 flex items-start justify-between gap-4 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-800"
+  >
+    <p className="text-sm">{secondaryError}</p>
+
+    <button
+      type="button"
+      onClick={loadDashboard}
+      className="shrink-0 text-sm font-semibold underline"
+    >
+      Retry
+    </button>
+  </div>
+)}
 
       {!hasCourses ? (
         <div className="mt-8 grid grid-cols-1 xl:grid-cols-[2fr_1fr] gap-6">
@@ -225,9 +323,19 @@ export default function EmployeeDashboard() {
             <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
               <div className="flex justify-between items-center mb-5">
                 <h3 className="text-xl font-bold text-gray-900">Leaderboard</h3>
-                <span className="bg-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full">
-                  COMING SOON
-                </span>
+                <div className="mb-5 flex items-center justify-between">
+  <h3 className="text-xl font-bold text-gray-900">
+    Leaderboard
+  </h3>
+
+  <button
+    type="button"
+    onClick={() => navigate('/employee/leaderboard')}
+    className="text-sm font-semibold text-brand-500"
+  >
+    View leaderboard
+  </button>
+</div>
               </div>
 
               <div className="bg-gray-100 rounded-full px-5 py-3 text-center text-gray-600 text-sm">
