@@ -45,10 +45,12 @@ import ManagerAnalytics from './pages/manager/Analytics'
 import ManagerNotifications from './pages/manager/Notifications'
 import ManagerSettings from './pages/manager/Settings'
 
+
 // ================= TRAINER =================
 import TrainerDashboard from './pages/trainer/Dashboard'
 import TrainerCourseRequests from './pages/trainer/CourseRequests'
 import TrainerMyCourses from './pages/trainer/MyCourses'
+import TrainerCourseDetail from './pages/trainer/TrainerCourseDetail'
 import TrainerNotifications from './pages/trainer/Notifications'
 import TrainerSettings from './pages/trainer/Settings'
 
@@ -284,9 +286,14 @@ export default function App() {
               />
 
               <Route
-                path="courses"
-                element={<TrainerMyCourses />}
-              />
+  path="courses"
+  element={<TrainerMyCourses />}
+/>
+
+<Route
+  path="courses/:courseId"
+  element={<TrainerCourseDetail />}
+/>
 
               <Route
                 path="curriculum"

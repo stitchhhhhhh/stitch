@@ -1,4 +1,13 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+} from "react";
+
+import {
+  useNavigate,
+} from "react-router-dom";
 
 import CourseStatCard from "../../components/trainer/my-courses/CourseStatCard";
 import FilterBar from "../../components/trainer/my-courses/FilterBar";
@@ -6,6 +15,7 @@ import CourseCard from "../../components/trainer/my-courses/CourseCard";
 import QuickActions from "../../components/trainer/my-courses/QuickActions";
 import RecentActivities from "../../components/trainer/my-courses/RecentActivities";
 import CreateCourseModal from "../../components/trainer/dashboard/CreateCourseModal";
+import EditCourseModal from "../../components/trainer/my-courses/EditCourseModal";
 import {
   getTrainerCourses,
   submitCourseForReview,
@@ -49,6 +59,63 @@ const STATUS_META = {
     group: "approved",
   },
 };
+
+function formatRelativeDate(value) {
+  if (!value) {
+    return "recently";
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return "recently";
+  }
+
+  const now = new Date();
+  const differenceInSeconds = Math.floor(
+    (now.getTime() - date.getTime()) / 1000
+  );
+
+  if (differenceInSeconds < 60) {
+    return "just now";
+  }
+
+  const differenceInMinutes = Math.floor(
+    differenceInSeconds / 60
+  );
+
+  if (differenceInMinutes < 60) {
+    return `${differenceInMinutes} minute${
+      differenceInMinutes === 1 ? "" : "s"
+    } ago`;
+  }
+
+  const differenceInHours = Math.floor(
+    differenceInMinutes / 60
+  );
+
+  if (differenceInHours < 24) {
+    return `${differenceInHours} hour${
+      differenceInHours === 1 ? "" : "s"
+    } ago`;
+  }
+
+  const differenceInDays = Math.floor(
+    differenceInHours / 24
+  );
+
+  if (differenceInDays < 30) {
+    return `${differenceInDays} day${
+      differenceInDays === 1 ? "" : "s"
+    } ago`;
+  }
+
+  return new Intl.DateTimeFormat("en", {
+    day: "2-digit",
+    month: "short",
+    year: "numeric",
+  }).format(date);
+}
 
 function MyCoursesSkeleton() {
   return (
@@ -95,17 +162,29 @@ function MyCoursesSkeleton() {
   );
 }
 
-function formatRelativeDate(value) {
-  if (!value) return "Date unavailable";
+function calculateCourseSetupProgress(
+  course
+) {
+  const materials = Array.isArray(
+    course.materials
+  )
+    ? course.materials
+    : [];
 
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "Date unavailable";
+  const assessments = Array.isArray(
+    course.assessments
+  )
+    ? course.assessments
+    : [];
 
-  return new Intl.DateTimeFormat("en", {
-    day: "2-digit",
-    month: "short",
-    year: "numeric",
-  }).format(date);
+  const completedChecks = [
+    Boolean(course.course_title?.trim()),
+    Boolean(course.description?.trim()),
+    materials.length > 0,
+    assessments.length > 0,
+  ].filter(Boolean).length;
+
+  return completedChecks * 25;
 }
 
 function normalizeCourse(course) {
@@ -129,7 +208,7 @@ function normalizeCourse(course) {
     status: statusMeta.label,
     statusGroup: statusMeta.group,
     badgeColor: statusMeta.badgeColor,
-    progress: statusMeta.progress,
+    progress: calculateCourseSetupProgress(course),
     updated: `Created ${formatRelativeDate(course.created_date)}`,
     secondaryButton: "Details",
     primaryButton: statusMeta.primaryButton,
@@ -139,6 +218,7 @@ function normalizeCourse(course) {
 }
 
 export default function MyCourses() {
+  const navigate = useNavigate();
   const [showCreateCourse, setShowCreateCourse] = useState(false);
   const [selectedCourse, setSelectedCourse] =
   useState(null);
@@ -305,12 +385,17 @@ async function handleUpdateCourse(payload) {
 }
 
 function handleViewCourse(course) {
-  setSelectedCourse(course);
-  setError("");
+  console.log("View clicked:", course);
 
-  setNotice(
-    `Course: ${course.title} | Status: ${course.status} | Type: ${course.trainingType} | Department: ${course.department}`
-  );
+  setError("");
+  setNotice("");
+
+  const section =
+    course.approvalStatus === "submitted"
+      ? "?section=submission"
+      : "";
+
+  navigate(`/trainer/courses/${course.id}${section}`);
 }
 
   function clearFilters() {
@@ -358,11 +443,8 @@ function handleViewCourse(course) {
     return;
   }
 
-  setError("");
-  setSelectedCourse(latestEditableCourse);
-
-  setNotice(
-    `Selected "${latestEditableCourse.title}". Materials can be uploaded while this course is editable.`
+  navigate(
+    `/trainer/courses/${latestEditableCourse.id}?section=materials`
   );
 }
 

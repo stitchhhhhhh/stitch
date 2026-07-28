@@ -1,376 +1,325 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../context/AuthContext';
-import { getMyCourses } from '../../services/courseService';
 import {
-  Clock,
+  BarChart3,
+  Bell,
   BookOpen,
-  CheckCircle2,
-  ChevronRight,
-} from 'lucide-react';
+  ClipboardList,
+  FileBarChart,
+  GraduationCap,
+  LayoutDashboard,
+  Medal,
+  Settings,
+  Trophy,
+  UserCheck,
+  Users
+} from 'lucide-react'
 
-const REQUEST_TIMEOUT_MS = 15000;
+import { NavLink } from 'react-router-dom'
 
-const STATUS_STYLE = {
-  completed: 'bg-green-50 text-green-600',
-  in_progress: 'bg-brand-50 text-brand-600',
-  not_started: 'bg-gray-100 text-gray-500',
-};
+import companyLogo from '../../assets/company-logo.png'
+import { ROLES } from '../../constants/roles'
+import { useAuth } from '../../context/AuthContext'
 
-const STATUS_LABEL = {
-  completed: 'Completed',
-  in_progress: 'In Progress',
-  not_started: 'Not Started',
-};
+const MENUS_BY_ROLE = {
+  [ROLES.EMPLOYEE]: [
+    {
+      label: 'Dashboard',
+      path: '/employee',
+      icon: LayoutDashboard,
+      end: true
+    },
+    {
+      label: 'Courses',
+      path: '/employee/courses',
+      icon: BookOpen
+    },
+    {
+      label: 'Certificates',
+      path: '/employee/certificates',
+      icon: GraduationCap
+    },
+    {
+      label: 'Leaderboard',
+      path: '/employee/leaderboard',
+      icon: Trophy
+    },
+    {
+      label: 'Notifications',
+      path: '/employee/notifications',
+      icon: Bell
+    },
+    {
+      label: 'Settings',
+      path: '/employee/settings',
+      icon: Settings
+    }
+  ],
 
-const FILTERS = [
-  { key: 'all', label: 'All Courses' },
-  { key: 'in_progress', label: 'In Progress' },
-  { key: 'completed', label: 'Completed' },
-  { key: 'not_started', label: 'Not Started' },
-];
+  [ROLES.MANAGER]: [
+    {
+      label: 'Dashboard',
+      path: '/manager',
+      icon: LayoutDashboard,
+      end: true
+    },
+    {
+      label: 'Training Proposals',
+      path: '/manager/proposals',
+      icon: ClipboardList
+    },
+    {
+      label: 'Department Training',
+      path: '/manager/department-training',
+      icon: Users
+    },
+    {
+      label: 'Employee Progress',
+      path: '/manager/progress',
+      icon: UserCheck
+    },
+    {
+      label: 'Analytics',
+      path: '/manager/analytics',
+      icon: BarChart3
+    },
+    {
+      label: 'Notifications',
+      path: '/manager/notifications',
+      icon: Bell
+    },
+    {
+      label: 'Settings',
+      path: '/manager/settings',
+      icon: Settings
+    }
+  ],
 
-function requestWithTimeout(promise, timeoutMs = REQUEST_TIMEOUT_MS) {
-  let timeoutId;
+  [ROLES.HR]: [
+    {
+      label: 'Dashboard',
+      path: '/hr',
+      icon: LayoutDashboard,
+      end: true
+    },
+    {
+      label: 'General Training',
+      path: '/hr/programs',
+      icon: GraduationCap
+    },
+    {
+      label: 'Course Requests',
+      path: '/hr/course-requests',
+      icon: BookOpen
+    },
+    {
+      label: 'Training Requests',
+      path: '/hr/training-requests',
+      icon: ClipboardList
+    },
+    {
+      label: 'Analytics',
+      path: '/hr/analytics',
+      icon: BarChart3
+    },
+    {
+      label: 'Reports',
+      path: '/hr/reports',
+      icon: FileBarChart
+    },
+    {
+      label: 'Notifications',
+      path: '/hr/notifications',
+      icon: Bell
+    },
+    {
+      label: 'Settings',
+      path: '/hr/settings',
+      icon: Settings
+    }
+  ],
 
-  const timeoutPromise = new Promise((_, reject) => {
-    timeoutId = setTimeout(() => {
-      reject(
-        new Error(
-          'The course request timed out. Please try again.'
-        )
-      );
-    }, timeoutMs);
-  });
-
-  return Promise.race([promise, timeoutPromise]).finally(() => {
-    clearTimeout(timeoutId);
-  });
+  [ROLES.TRAINER]: [
+    {
+      label: 'Dashboard',
+      path: '/trainer',
+      icon: LayoutDashboard,
+      end: true
+    },
+    {
+      label: 'Course Requests',
+      path: '/trainer/requests',
+      icon: ClipboardList
+    },
+    {
+      label: 'My Courses',
+      path: '/trainer/courses',
+      icon: BookOpen
+    },
+    {
+      label: 'Notifications',
+      path: '/trainer/notifications',
+      icon: Bell
+    },
+    {
+      label: 'Settings',
+      path: '/trainer/settings',
+      icon: Settings
+    }
+  ]
 }
 
-function MyCoursesSkeleton() {
-  return (
-    <div
-      className="space-y-6 animate-pulse"
-      aria-label="Loading courses"
-      aria-busy="true"
-    >
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div className="space-y-3">
-          <div className="h-9 w-48 rounded-lg bg-gray-200" />
-          <div className="h-4 w-64 max-w-full rounded bg-gray-200" />
-        </div>
-
-        <div className="h-10 w-96 max-w-full rounded-full bg-gray-200" />
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-        {Array.from({ length: 4 }).map((_, index) => (
-          <div
-            key={index}
-            className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
-          >
-            <div className="flex items-start justify-between gap-4">
-              <div className="flex-1 space-y-3">
-                <div className="flex gap-2">
-                  <div className="h-6 w-24 rounded-full bg-gray-200" />
-                  <div className="h-6 w-20 rounded-full bg-gray-200" />
-                </div>
-
-                <div className="h-5 w-3/4 rounded bg-gray-200" />
-                <div className="h-4 w-full rounded bg-gray-200" />
-                <div className="h-4 w-2/3 rounded bg-gray-200" />
-
-                <div className="flex gap-4">
-                  <div className="h-4 w-20 rounded bg-gray-200" />
-                  <div className="h-4 w-20 rounded bg-gray-200" />
-                </div>
-              </div>
-
-              <div className="h-5 w-5 rounded bg-gray-200" />
-            </div>
-
-            <div className="mt-5 space-y-2">
-              <div className="flex justify-between">
-                <div className="h-3 w-16 rounded bg-gray-200" />
-                <div className="h-3 w-10 rounded bg-gray-200" />
-              </div>
-              <div className="h-2 w-full rounded-full bg-gray-200" />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function CourseCard({ course, onClick }) {
-  const rawProgress =
-    Number(course.enrollment?.completion_percentage) || 0;
-
-  const progress = Math.min(
-    Math.max(Math.round(rawProgress), 0),
-    100
-  );
-
-  const rawStatus =
-    course.enrollment?.status ?? 'not_started';
-
-  const status = STATUS_LABEL[rawStatus]
-    ? rawStatus
-    : 'not_started';
+function SidebarMenuItem({ menu }) {
+  const Icon = menu.icon
 
   return (
-    <div
-      onClick={onClick}
-      className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 cursor-pointer hover:shadow-md hover:border-brand-200 transition-all"
+    <NavLink
+      to={menu.path}
+      end={Boolean(menu.end)}
+      title={menu.label}
+      className={({ isActive }) =>
+        [
+          'group flex min-h-12 w-full cursor-pointer',
+          'items-center gap-3 rounded-2xl px-4 py-3',
+          'text-sm font-medium transition-colors duration-200',
+          'focus:outline-none focus:ring-2 focus:ring-white/40',
+          isActive
+            ? 'bg-[#4453F2] text-white shadow-sm'
+            : 'text-white/80 hover:bg-white/10 hover:text-white'
+        ].join(' ')
+      }
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-2">
-            <span
-              className={`text-[11px] font-bold uppercase tracking-wide px-2.5 py-1 rounded-full ${STATUS_STYLE[status]}`}
-            >
-              {STATUS_LABEL[status]}
-            </span>
-
-            {course.category && (
-              <span className="text-[11px] font-medium text-gray-400 bg-gray-100 px-2.5 py-1 rounded-full">
-                {course.category}
-              </span>
-            )}
-          </div>
-
-          <h3 className="text-base font-bold text-gray-900 truncate">
-            {course.course_title || 'Untitled Course'}
-          </h3>
-
-          {course.description && (
-            <p className="text-sm text-gray-500 mt-1 line-clamp-2">
-              {course.description}
-            </p>
-          )}
-
-          <div className="flex items-center gap-4 mt-3 text-xs text-gray-400">
-            {course.duration_hours && (
-              <span className="flex items-center gap-1">
-                <Clock size={13} />
-                {course.duration_hours} Hours
-              </span>
-            )}
-
-            {course.level && (
-              <span className="flex items-center gap-1">
-                <BookOpen size={13} />
-                {course.level}
-              </span>
-            )}
-
-            {course.deadline && (
-              <span className="text-amber-500 font-medium">
-                Due:{' '}
-                {new Date(course.deadline).toLocaleDateString(
-                  'en-GB',
-                  {
-                    day: 'numeric',
-                    month: 'short',
-                    year: 'numeric',
-                  }
-                )}
-              </span>
-            )}
-          </div>
-        </div>
-
-        <ChevronRight
+      <span
+        className="
+          flex h-8 w-8 shrink-0
+          items-center justify-center
+          rounded-lg
+          text-white/90
+          group-hover:text-white
+        "
+      >
+        <Icon
           size={20}
-          className="text-gray-300 shrink-0 mt-1"
+          strokeWidth={2}
+          aria-hidden="true"
+        />
+      </span>
+
+      <span className="min-w-0 truncate">
+        {menu.label}
+      </span>
+    </NavLink>
+  )
+}
+
+export default function Sidebar() {
+  const { roleName, user } = useAuth()
+
+  const normalizedRole = String(
+    roleName ||
+      user?.role ||
+      ''
+  )
+    .trim()
+    .toUpperCase()
+
+  const menus =
+    MENUS_BY_ROLE[normalizedRole] || []
+
+  const displayName =
+    user?.full_name ||
+    user?.name ||
+    user?.email ||
+    'User'
+
+  return (
+    <aside
+      className="
+        flex h-screen w-[260px]
+        min-w-[260px] shrink-0
+        flex-col overflow-hidden
+        bg-[#2F3FE4] text-white
+      "
+      aria-label="Main navigation"
+    >
+      <div
+        className="
+          flex shrink-0
+          justify-center
+          px-6 pb-8 pt-8
+        "
+      >
+        <img
+          src={companyLogo}
+          alt="Learning Company"
+          className="
+            h-auto w-[170px]
+            max-w-full object-contain
+          "
         />
       </div>
 
-      <div className="mt-4">
-        <div className="flex justify-between text-xs text-gray-500 mb-1.5">
-          <span>Progress</span>
-          <span className="font-semibold text-gray-700">
-            {progress}%
-          </span>
-        </div>
+      <nav
+        className="
+          min-h-0 flex-1
+          space-y-2 overflow-y-auto
+          overflow-x-hidden
+          px-4 pb-4
+        "
+      >
+        {menus.map((menu) => (
+          <SidebarMenuItem
+            key={menu.path}
+            menu={menu}
+          />
+        ))}
 
-        <div className="w-full h-1.5 bg-gray-100 rounded-full">
+        {menus.length === 0 && (
           <div
-            className="h-1.5 rounded-full transition-all"
-            style={{
-              width: `${progress}%`,
-              backgroundColor:
-                status === 'completed'
-                  ? '#22c55e'
-                  : '#3046d6',
-            }}
-          />
-        </div>
-      </div>
-    </div>
-  );
-}
+            className="
+              rounded-2xl bg-white/10
+              px-4 py-3
+              text-sm text-white/70
+            "
+          >
+            Navigation is unavailable.
+          </div>
+        )}
+      </nav>
 
-export default function MyCourses() {
-  const { user } = useAuth();
-  const userId = user?.user_id;
-  const navigate = useNavigate();
-  const isMountedRef = useRef(true);
-
-  const [courses, setCourses] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState('all');
-  const [error, setError] = useState('');
-
-  const loadCourses = useCallback(async () => {
-    if (!userId) {
-      if (isMountedRef.current) {
-        setCourses([]);
-        setError('');
-        setLoading(false);
-      }
-
-      return;
-    }
-
-    try {
-      if (isMountedRef.current) {
-        setLoading(true);
-        setError('');
-      }
-
-      const data = await requestWithTimeout(
-        getMyCourses(userId)
-      );
-
-      if (!isMountedRef.current) {
-        return;
-      }
-
-      setCourses(Array.isArray(data) ? data : []);
-    } catch (err) {
-      if (!isMountedRef.current) {
-        return;
-      }
-
-      console.error('MY COURSES ERROR:', err);
-
-      setCourses([]);
-      setError(
-        err instanceof Error && err.message
-          ? err.message
-          : 'Failed to load courses.'
-      );
-    } finally {
-      if (isMountedRef.current) {
-        setLoading(false);
-      }
-    }
-  }, [userId]);
-
-  useEffect(() => {
-    isMountedRef.current = true;
-    loadCourses();
-
-    return () => {
-      isMountedRef.current = false;
-    };
-  }, [loadCourses]);
-
-  const filteredCourses =
-    filter === 'all'
-      ? courses
-      : courses.filter(
-          (course) =>
-            course.enrollment?.status === filter
-        );
-
-  if (loading) {
-    return <MyCoursesSkeleton />;
-  }
-
-  if (error) {
-    return (
-      <div className="bg-red-50 border border-red-200 text-red-700 rounded-2xl p-6">
-        <h2 className="font-bold">
-          Courses could not be loaded
-        </h2>
-
-        <p className="text-sm mt-2">{error}</p>
-
-        <button
-          type="button"
-          onClick={loadCourses}
-          className="mt-4 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition"
+      <div
+        className="
+          shrink-0 border-t
+          border-white/10 p-4
+        "
+      >
+        <div
+          className="
+            rounded-2xl
+            bg-[#4453F2]
+            px-4 py-3
+          "
         >
-          Try Again
-        </button>
-      </div>
-    );
-  }
+          <p
+            className="
+              truncate text-sm
+              font-semibold text-white
+            "
+            title={displayName}
+          >
+            {displayName}
+          </p>
 
-  return (
-    <div>
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">
-            My Courses
-          </h1>
-
-          <p className="text-sm text-gray-500 mt-1">
-            {courses.length} course
-            {courses.length !== 1 ? 's' : ''} assigned to you
+          <p
+            className="
+              mt-1 truncate
+              text-xs font-medium
+              uppercase tracking-wide
+              text-white/70
+            "
+          >
+            {normalizedRole || 'USER'}
           </p>
         </div>
-
-        <div className="flex bg-gray-100 rounded-full p-1 text-sm gap-1">
-          {FILTERS.map((filterOption) => (
-            <button
-              key={filterOption.key}
-              type="button"
-              onClick={() => setFilter(filterOption.key)}
-              className={`px-4 py-1.5 rounded-full font-medium transition ${
-                filter === filterOption.key
-                  ? 'bg-white shadow text-gray-900'
-                  : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {filterOption.label}
-            </button>
-          ))}
-        </div>
       </div>
-
-      {filteredCourses.length === 0 ? (
-        <div className="flex flex-col items-center justify-center h-48 text-gray-400">
-          <CheckCircle2
-            size={40}
-            className="mb-3 opacity-30"
-          />
-
-          <p className="text-sm">
-            {courses.length === 0
-              ? 'No courses have been assigned to you.'
-              : 'No courses in this category.'}
-          </p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-          {filteredCourses.map((course) => (
-            <CourseCard
-              key={course.course_id}
-              course={course}
-              onClick={() =>
-                navigate(
-                  `/employee/courses/${course.course_id}`
-                )
-              }
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
+    </aside>
+  )
 }

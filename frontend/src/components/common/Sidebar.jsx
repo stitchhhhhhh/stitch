@@ -157,20 +157,15 @@ export default function Sidebar({
 
   return (
     <>
-      {isOpen && (
-        <div
-          onClick={onClose}
-          className="fixed inset-0 z-40 bg-black/40 md:hidden"
-        />
-      )}
-
       <aside
-        className={
-          `fixed md:static inset-y-0 left-0 z-50 w-[260px] min-w-[260px] min-h-screen ` +
-          `bg-[#2F3FE4] text-white flex flex-col transform transition-transform duration-300 ease-in-out ` +
-          `${isOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`
-        }
-      >
+  className="
+    flex h-screen w-[260px]
+    min-w-[260px] flex-col
+    overflow-hidden
+    bg-[#2F3FE4]
+    text-white
+  "
+>
         {/* Logo */}
         <div className="flex justify-center px-6 pt-8 pb-10">
           <img
@@ -181,7 +176,7 @@ export default function Sidebar({
         </div>
 
         {/* Menu */}
-        <nav className="flex-1 px-4 space-y-2">
+        <nav className="min-h-0 flex-1 space-y-2 overflow-y-auto px-4 pb-4">
           {menus.map((menu) => (
             <NavLink
               key={menu.path}

@@ -14,10 +14,15 @@ const EDITABLE_COURSE_STATUSES = [
   'rejected'
 ]
 
+const REQUIRED_OPTION_COUNT = 4
+
 function parsePositiveInteger(value) {
   const parsed = Number.parseInt(value, 10)
 
-  if (!Number.isInteger(parsed) || parsed <= 0) {
+  if (
+    !Number.isInteger(parsed) ||
+    parsed <= 0
+  ) {
     return null
   }
 
@@ -25,28 +30,349 @@ function parsePositiveInteger(value) {
 }
 
 function normalizeRole(role) {
-  return String(role || '').trim().toUpperCase()
+  return String(role || '')
+    .trim()
+    .toUpperCase()
 }
 
-function serializeQuestions(questions, includeCorrectAnswer) {
+function normalizeText(value) {
+  return typeof value === 'string'
+    ? value.trim()
+    : ''
+}
+
+/**
+ * Accept these payload formats:
+ *
+ * 1. Array of strings:
+ * options: [
+ *   "Option A",
+ *   "Option B",
+ *   "Option C",
+ *   "Option D"
+ * ]
+ *
+ * 2. Array of objects:
+ * options: [
+ *   { option_text: "Option A", position: 1 },
+ *   { option_text: "Option B", position: 2 },
+ *   { option_text: "Option C", position: 3 },
+ *   { option_text: "Option D", position: 4 }
+ * ]
+ */
+function normalizeOptions(rawOptions) {
+  if (!Array.isArray(rawOptions)) {
+    return []
+  }
+
+  return rawOptions.map((option, index) => {
+    if (typeof option === 'string') {
+      return {
+        option_text: option.trim(),
+        position: index + 1
+      }
+    }
+
+    const position = Number(option?.position)
+
+    return {
+      option_text: normalizeText(
+        option?.option_text ??
+          option?.text ??
+          option?.label ??
+          option?.value
+      ),
+      position:
+        Number.isInteger(position) &&
+        position > 0
+          ? position
+          : index + 1
+    }
+  })
+}
+
+/**
+ * correct_answer may be:
+ *
+ * - "A", "B", "C", "D"
+ * - "1", "2", "3", "4"
+ * - option position as a number
+ * - complete option text
+ */
+function resolveCorrectOption({
+  options,
+  correctAnswer,
+  correctOption
+}) {
+  const rawValue =
+    correctOption ??
+    correctAnswer
+
+  if (
+    rawValue === undefined ||
+    rawValue === null
+  ) {
+    return null
+  }
+
+  const normalizedValue = String(rawValue)
+    .trim()
+
+  if (!normalizedValue) {
+    return null
+  }
+
+  const letterPositions = {
+    A: 1,
+    B: 2,
+    C: 3,
+    D: 4
+  }
+
+  const upperValue =
+    normalizedValue.toUpperCase()
+
+  if (letterPositions[upperValue]) {
+    return (
+      options.find(
+        (option) =>
+          option.position ===
+          letterPositions[upperValue]
+      ) || null
+    )
+  }
+
+  const numericPosition =
+    Number(normalizedValue)
+
+  if (
+    Number.isInteger(numericPosition) &&
+    numericPosition > 0
+  ) {
+    const optionByPosition =
+      options.find(
+        (option) =>
+          option.position ===
+          numericPosition
+      )
+
+    if (optionByPosition) {
+      return optionByPosition
+    }
+  }
+
+  return (
+    options.find(
+      (option) =>
+        option.option_text
+          .toLowerCase() ===
+        normalizedValue.toLowerCase()
+    ) || null
+  )
+}
+
+function validateQuestionPayload(body) {
+  const questionText =
+    normalizeText(body?.question_text)
+
+  const options =
+    normalizeOptions(body?.options)
+
+  if (!questionText) {
+    return {
+      error:
+        'Question text is required.'
+    }
+  }
+
+  if (
+    options.length !==
+    REQUIRED_OPTION_COUNT
+  ) {
+    return {
+      error:
+        'Exactly four answer options are required.'
+    }
+  }
+
+  if (
+    options.some(
+      (option) =>
+        !option.option_text
+    )
+  ) {
+    return {
+      error:
+        'All answer options are required.'
+    }
+  }
+
+  const uniquePositions =
+    new Set(
+      options.map(
+        (option) => option.position
+      )
+    )
+
+  if (
+    uniquePositions.size !==
+    REQUIRED_OPTION_COUNT
+  ) {
+    return {
+      error:
+        'Each answer option must have a unique position.'
+    }
+  }
+
+  const sortedOptions = [...options].sort(
+    (first, second) =>
+      first.position - second.position
+  )
+
+  const expectedPositions = [1, 2, 3, 4]
+
+  const hasValidPositions =
+    sortedOptions.every(
+      (option, index) =>
+        option.position ===
+        expectedPositions[index]
+    )
+
+  if (!hasValidPositions) {
+    return {
+      error:
+        'Answer option positions must be 1, 2, 3, and 4.'
+    }
+  }
+
+  const normalizedOptionTexts =
+    sortedOptions.map(
+      (option) =>
+        option.option_text.toLowerCase()
+    )
+
+  if (
+    new Set(normalizedOptionTexts).size !==
+    REQUIRED_OPTION_COUNT
+  ) {
+    return {
+      error:
+        'Answer options must be different from each other.'
+    }
+  }
+
+  const correctOption =
+    resolveCorrectOption({
+      options: sortedOptions,
+      correctAnswer:
+        body?.correct_answer,
+      correctOption:
+        body?.correct_option
+    })
+
+  if (!correctOption) {
+    return {
+      error:
+        'Please select a valid correct answer.'
+    }
+  }
+
+  return {
+    questionText,
+    options: sortedOptions,
+    correctOption
+  }
+}
+
+function serializeOption(
+  option,
+  includeCorrectAnswer
+) {
+  const serialized = {
+    id: option.id,
+    option_id: option.id,
+    question_id:
+      option.question_id,
+    option_text:
+      option.option_text,
+    text:
+      option.option_text,
+    position:
+      option.position
+  }
+
+  if (includeCorrectAnswer) {
+    serialized.is_correct =
+      Boolean(option.is_correct)
+  }
+
+  return serialized
+}
+
+function serializeQuestion(
+  question,
+  includeCorrectAnswer
+) {
+  const options = Array.isArray(
+    question.options
+  )
+    ? [...question.options]
+        .sort(
+          (first, second) =>
+            first.position -
+            second.position
+        )
+        .map((option) =>
+          serializeOption(
+            option,
+            includeCorrectAnswer
+          )
+        )
+    : []
+
+  const serialized = {
+    id: question.id,
+    question_id: question.id,
+    assessment_id:
+      question.assessment_id,
+    question_text:
+      question.question_text,
+    options
+  }
+
+  if (includeCorrectAnswer) {
+    serialized.correct_answer =
+      question.correct_answer
+
+    const correctOption =
+      options.find(
+        (option) =>
+          option.is_correct
+      )
+
+    serialized.correct_option =
+      correctOption
+        ? correctOption.position
+        : null
+  }
+
+  return serialized
+}
+
+function serializeQuestions(
+  questions,
+  includeCorrectAnswer
+) {
   if (!Array.isArray(questions)) {
     return []
   }
 
-  return questions.map((question) => {
-    const serialized = {
-      id: question.id,
-      assessment_id: question.assessment_id,
-      question_text: question.question_text
-    }
-
-    if (includeCorrectAnswer) {
-      serialized.correct_answer =
-        question.correct_answer
-    }
-
-    return serialized
-  })
+  return questions.map((question) =>
+    serializeQuestion(
+      question,
+      includeCorrectAnswer
+    )
+  )
 }
 
 async function canAccessCourseAssessment({
@@ -54,24 +380,39 @@ async function canAccessCourseAssessment({
   courseId
 }) {
   const role = normalizeRole(user?.role)
-  const userId = Number(user?.user_id)
+  const userId =
+    Number(user?.user_id)
 
-  const course = await prisma.course.findUnique({
-    where: {
-      id: courseId
-    },
-    select: {
-      id: true,
-      trainer_id: true,
-      approval_status: true
+  if (
+    !Number.isInteger(userId) ||
+    userId <= 0
+  ) {
+    return {
+      allowed: false,
+      status: 401,
+      message:
+        'Invalid user session.'
     }
-  })
+  }
+
+  const course =
+    await prisma.course.findUnique({
+      where: {
+        id: courseId
+      },
+      select: {
+        id: true,
+        trainer_id: true,
+        approval_status: true
+      }
+    })
 
   if (!course) {
     return {
       allowed: false,
       status: 404,
-      message: 'Course not found.'
+      message:
+        'Course not found.'
     }
   }
 
@@ -84,7 +425,9 @@ async function canAccessCourseAssessment({
   }
 
   if (role === 'TRAINER') {
-    if (course.trainer_id !== userId) {
+    if (
+      course.trainer_id !== userId
+    ) {
       return {
         allowed: false,
         status: 403,
@@ -154,13 +497,15 @@ async function getTrainerAssessment({
       assessment: null,
       error: {
         status: 404,
-        message: 'Assessment not found.'
+        message:
+          'Assessment not found.'
       }
     }
   }
 
   if (
-    assessment.course.trainer_id !== trainerId
+    assessment.course.trainer_id !==
+    trainerId
   ) {
     return {
       assessment: null,
@@ -174,7 +519,8 @@ async function getTrainerAssessment({
 
   if (
     !EDITABLE_COURSE_STATUSES.includes(
-      assessment.course.approval_status
+      assessment.course
+        .approval_status
     )
   ) {
     return {
@@ -193,18 +539,25 @@ async function getTrainerAssessment({
   }
 }
 
-// GET assessments belonging to a course.
+/**
+ * GET /api/assessments/course/:courseId
+ *
+ * Get all assessments belonging to a course.
+ */
 router.get(
   '/course/:courseId',
   authMiddleware,
   async (req, res) => {
     try {
       const courseId =
-        parsePositiveInteger(req.params.courseId)
+        parsePositiveInteger(
+          req.params.courseId
+        )
 
       if (!courseId) {
         return res.status(400).json({
-          message: 'Invalid course ID.'
+          message:
+            'Invalid course ID.'
         })
       }
 
@@ -218,7 +571,8 @@ router.get(
         return res
           .status(access.status)
           .json({
-            message: access.message
+            message:
+              access.message
           })
       }
 
@@ -228,22 +582,35 @@ router.get(
             course_id: courseId
           },
           include: {
-            questions: true
+            questions: {
+              include: {
+                options: {
+                  orderBy: {
+                    position: 'asc'
+                  }
+                }
+              },
+              orderBy: {
+                id: 'asc'
+              }
+            }
           },
           orderBy: {
             id: 'asc'
           }
         })
 
-      const response = assessments.map(
-        (assessment) => ({
-          ...assessment,
-          questions: serializeQuestions(
-            assessment.questions,
-            access.includeCorrectAnswer
-          )
-        })
-      )
+      const response =
+        assessments.map(
+          (assessment) => ({
+            ...assessment,
+            questions:
+              serializeQuestions(
+                assessment.questions,
+                access.includeCorrectAnswer
+              )
+          })
+        )
 
       return res.json(response)
     } catch (error) {
@@ -260,18 +627,25 @@ router.get(
   }
 )
 
-// GET assessment details and questions.
+/**
+ * GET /api/assessments/:id
+ *
+ * Get one assessment with its questions and options.
+ */
 router.get(
   '/:id',
   authMiddleware,
   async (req, res) => {
     try {
       const assessmentId =
-        parsePositiveInteger(req.params.id)
+        parsePositiveInteger(
+          req.params.id
+        )
 
       if (!assessmentId) {
         return res.status(400).json({
-          message: 'Invalid assessment ID.'
+          message:
+            'Invalid assessment ID.'
         })
       }
 
@@ -281,36 +655,51 @@ router.get(
             id: assessmentId
           },
           include: {
-            questions: true
+            questions: {
+              include: {
+                options: {
+                  orderBy: {
+                    position: 'asc'
+                  }
+                }
+              },
+              orderBy: {
+                id: 'asc'
+              }
+            }
           }
         })
 
       if (!assessment) {
         return res.status(404).json({
-          message: 'Assessment not found.'
+          message:
+            'Assessment not found.'
         })
       }
 
       const access =
         await canAccessCourseAssessment({
           user: req.user,
-          courseId: assessment.course_id
+          courseId:
+            assessment.course_id
         })
 
       if (!access.allowed) {
         return res
           .status(access.status)
           .json({
-            message: access.message
+            message:
+              access.message
           })
       }
 
       return res.json({
         ...assessment,
-        questions: serializeQuestions(
-          assessment.questions,
-          access.includeCorrectAnswer
-        )
+        questions:
+          serializeQuestions(
+            assessment.questions,
+            access.includeCorrectAnswer
+          )
       })
     } catch (error) {
       console.error(
@@ -326,7 +715,11 @@ router.get(
   }
 )
 
-// POST — Trainer creates an assessment.
+/**
+ * POST /api/assessments
+ *
+ * Trainer creates an assessment.
+ */
 router.post(
   '/',
   authMiddleware,
@@ -334,23 +727,30 @@ router.post(
   async (req, res) => {
     try {
       const courseId =
-        parsePositiveInteger(req.body.course_id)
+        parsePositiveInteger(
+          req.body.course_id
+        )
 
       const title =
-        typeof req.body.title === 'string'
-          ? req.body.title.trim()
-          : ''
+        normalizeText(
+          req.body.title
+        )
 
       const passingScore =
-        req.body.passing_score === undefined ||
-        req.body.passing_score === null ||
+        req.body.passing_score ===
+          undefined ||
+        req.body.passing_score ===
+          null ||
         req.body.passing_score === ''
           ? 70
-          : Number(req.body.passing_score)
+          : Number(
+              req.body.passing_score
+            )
 
       if (!courseId) {
         return res.status(400).json({
-          message: 'Invalid course ID.'
+          message:
+            'Invalid course ID.'
         })
       }
 
@@ -362,7 +762,9 @@ router.post(
       }
 
       if (
-        !Number.isInteger(passingScore) ||
+        !Number.isInteger(
+          passingScore
+        ) ||
         passingScore < 0 ||
         passingScore > 100
       ) {
@@ -386,7 +788,8 @@ router.post(
 
       if (!course) {
         return res.status(404).json({
-          message: 'Course not found.'
+          message:
+            'Course not found.'
         })
       }
 
@@ -416,7 +819,8 @@ router.post(
           data: {
             course_id: courseId,
             title,
-            passing_score: passingScore
+            passing_score:
+              passingScore
           }
         })
 
@@ -437,7 +841,24 @@ router.post(
   }
 )
 
-// POST — Trainer adds a question.
+/**
+ * POST /api/assessments/:id/questions
+ *
+ * Trainer creates a question and four answer options.
+ *
+ * Expected body:
+ *
+ * {
+ *   "question_text": "What is phishing?",
+ *   "options": [
+ *     "A fake security attack",
+ *     "A database backup",
+ *     "A programming language",
+ *     "A network device"
+ *   ],
+ *   "correct_answer": "A"
+ * }
+ */
 router.post(
   '/:id/questions',
   authMiddleware,
@@ -445,66 +866,108 @@ router.post(
   async (req, res) => {
     try {
       const assessmentId =
-        parsePositiveInteger(req.params.id)
-
-      const questionText =
-        typeof req.body.question_text ===
-        'string'
-          ? req.body.question_text.trim()
-          : ''
-
-      const correctAnswer =
-        typeof req.body.correct_answer ===
-        'string'
-          ? req.body.correct_answer.trim()
-          : ''
+        parsePositiveInteger(
+          req.params.id
+        )
 
       if (!assessmentId) {
         return res.status(400).json({
-          message: 'Invalid assessment ID.'
+          message:
+            'Invalid assessment ID.'
         })
       }
 
-      if (!questionText) {
-        return res.status(400).json({
-          message:
-            'Question text is required.'
-        })
-      }
+      const validation =
+        validateQuestionPayload(
+          req.body
+        )
 
-      if (!correctAnswer) {
+      if (validation.error) {
         return res.status(400).json({
           message:
-            'Correct answer is required.'
+            validation.error
         })
       }
 
       const lookup =
         await getTrainerAssessment({
           assessmentId,
-          trainerId: req.user.user_id
+          trainerId:
+            req.user.user_id
         })
 
       if (lookup.error) {
         return res
-          .status(lookup.error.status)
+          .status(
+            lookup.error.status
+          )
           .json({
-            message: lookup.error.message
+            message:
+              lookup.error.message
           })
       }
 
-      const question =
-        await prisma.question.create({
-          data: {
-            assessment_id: assessmentId,
-            question_text: questionText,
-            correct_answer: correctAnswer
+      const createdQuestion =
+        await prisma.$transaction(
+          async (transaction) => {
+            const question =
+              await transaction.question.create({
+                data: {
+                  assessment_id:
+                    assessmentId,
+                  question_text:
+                    validation.questionText,
+
+                  // Keep the correct option text here
+                  // because assessmentResults.js compares
+                  // submitted answer_text against this value.
+                  correct_answer:
+                    validation.correctOption
+                      .option_text
+                }
+              })
+
+            await transaction.questionOption.createMany({
+              data:
+                validation.options.map(
+                  (option) => ({
+                    question_id:
+                      question.id,
+                    option_text:
+                      option.option_text,
+                    position:
+                      option.position,
+                    is_correct:
+                      option.position ===
+                      validation.correctOption
+                        .position
+                  })
+                )
+            })
+
+            return transaction.question.findUnique({
+              where: {
+                id: question.id
+              },
+              include: {
+                options: {
+                  orderBy: {
+                    position: 'asc'
+                  }
+                }
+              }
+            })
           }
-        })
+        )
 
       return res
         .status(201)
-        .json(question)
+        .json(
+          serializeQuestion(
+            createdQuestion,
+            true
+          )
+        )
     } catch (error) {
       console.error(
         'CREATE ASSESSMENT QUESTION ERROR:',
@@ -519,7 +982,11 @@ router.post(
   }
 )
 
-// PUT — Trainer updates a question.
+/**
+ * PUT /api/assessments/questions/:questionId
+ *
+ * Trainer updates a question and replaces all options.
+ */
 router.put(
   '/questions/:questionId',
   authMiddleware,
@@ -533,11 +1000,12 @@ router.put(
 
       if (!questionId) {
         return res.status(400).json({
-          message: 'Invalid question ID.'
+          message:
+            'Invalid question ID.'
         })
       }
 
-      const question =
+      const existingQuestion =
         await prisma.question.findUnique({
           where: {
             id: questionId
@@ -548,87 +1016,106 @@ router.put(
           }
         })
 
-      if (!question) {
+      if (!existingQuestion) {
         return res.status(404).json({
-          message: 'Question not found.'
+          message:
+            'Assessment question not found.'
         })
       }
 
       const lookup =
         await getTrainerAssessment({
           assessmentId:
-            question.assessment_id,
-          trainerId: req.user.user_id
+            existingQuestion.assessment_id,
+          trainerId:
+            req.user.user_id
         })
 
       if (lookup.error) {
         return res
-          .status(lookup.error.status)
+          .status(
+            lookup.error.status
+          )
           .json({
-            message: lookup.error.message
-          })
-      }
-
-      const updateData = {}
-
-      if (
-        req.body.question_text !== undefined
-      ) {
-        const questionText =
-          typeof req.body.question_text ===
-          'string'
-            ? req.body.question_text.trim()
-            : ''
-
-        if (!questionText) {
-          return res.status(400).json({
             message:
-              'Question text cannot be empty.'
+              lookup.error.message
           })
-        }
-
-        updateData.question_text =
-          questionText
       }
 
-      if (
-        req.body.correct_answer !== undefined
-      ) {
-        const correctAnswer =
-          typeof req.body.correct_answer ===
-          'string'
-            ? req.body.correct_answer.trim()
-            : ''
+      const validation =
+        validateQuestionPayload(
+          req.body
+        )
 
-        if (!correctAnswer) {
-          return res.status(400).json({
-            message:
-              'Correct answer cannot be empty.'
-          })
-        }
-
-        updateData.correct_answer =
-          correctAnswer
-      }
-
-      if (
-        Object.keys(updateData).length === 0
-      ) {
+      if (validation.error) {
         return res.status(400).json({
           message:
-            'No question changes were provided.'
+            validation.error
         })
       }
 
       const updatedQuestion =
-        await prisma.question.update({
-          where: {
-            id: questionId
-          },
-          data: updateData
-        })
+        await prisma.$transaction(
+          async (transaction) => {
+            await transaction.question.update({
+              where: {
+                id: questionId
+              },
+              data: {
+                question_text:
+                  validation.questionText,
+                correct_answer:
+                  validation.correctOption
+                    .option_text
+              }
+            })
 
-      return res.json(updatedQuestion)
+            await transaction.questionOption.deleteMany({
+              where: {
+                question_id:
+                  questionId
+              }
+            })
+
+            await transaction.questionOption.createMany({
+              data:
+                validation.options.map(
+                  (option) => ({
+                    question_id:
+                      questionId,
+                    option_text:
+                      option.option_text,
+                    position:
+                      option.position,
+                    is_correct:
+                      option.position ===
+                      validation.correctOption
+                        .position
+                  })
+                )
+            })
+
+            return transaction.question.findUnique({
+              where: {
+                id: questionId
+              },
+              include: {
+                options: {
+                  orderBy: {
+                    position: 'asc'
+                  }
+                }
+              }
+            })
+          }
+        )
+
+      return res.json(
+        serializeQuestion(
+          updatedQuestion,
+          true
+        )
+      )
     } catch (error) {
       console.error(
         'UPDATE ASSESSMENT QUESTION ERROR:',
@@ -643,7 +1130,12 @@ router.put(
   }
 )
 
-// DELETE — Trainer deletes a question.
+/**
+ * DELETE /api/assessments/questions/:questionId
+ *
+ * Trainer deletes a question.
+ * Question options are automatically deleted through onDelete: Cascade.
+ */
 router.delete(
   '/questions/:questionId',
   authMiddleware,
@@ -657,7 +1149,8 @@ router.delete(
 
       if (!questionId) {
         return res.status(400).json({
-          message: 'Invalid question ID.'
+          message:
+            'Invalid question ID.'
         })
       }
 
@@ -674,7 +1167,8 @@ router.delete(
 
       if (!question) {
         return res.status(404).json({
-          message: 'Question not found.'
+          message:
+            'Assessment question not found.'
         })
       }
 
@@ -682,14 +1176,18 @@ router.delete(
         await getTrainerAssessment({
           assessmentId:
             question.assessment_id,
-          trainerId: req.user.user_id
+          trainerId:
+            req.user.user_id
         })
 
       if (lookup.error) {
         return res
-          .status(lookup.error.status)
+          .status(
+            lookup.error.status
+          )
           .json({
-            message: lookup.error.message
+            message:
+              lookup.error.message
           })
       }
 

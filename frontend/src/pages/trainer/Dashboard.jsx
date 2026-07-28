@@ -11,6 +11,7 @@ import {
   getTrainerCourses,
   getTrainerCourseRequests,
   updateCourseRequestStatus,
+  deleteMaterial,
 } from "../../services/trainerService";
 
 import StatCard from "../../components/trainer/dashboard/StatCard";
@@ -76,10 +77,18 @@ export default function TrainerDashboard() {
   const [error, setError] = useState("");
 
   const [showCreateCourse, setShowCreateCourse] =
-    useState(false);
+  useState(false);
 
-  const [showUploadMaterial, setShowUploadMaterial] =
-    useState(false);
+const [showUploadMaterial, setShowUploadMaterial] =
+  useState(false);
+
+const [
+  deletingMaterialId,
+  setDeletingMaterialId,
+] = useState(null);
+
+const [successMessage, setSuccessMessage] =
+  useState("");
 
   const loadData = useCallback(async () => {
     if (!trainerId) {
@@ -174,15 +183,87 @@ export default function TrainerDashboard() {
     setShowUploadMaterial(true);
   }
 
-  const allMaterials = useMemo(
-    () =>
-      courses.flatMap((course) =>
-        Array.isArray(course.materials)
-          ? course.materials
-          : []
-      ),
-    [courses]
+  async function handleDeleteMaterial(
+  material
+) {
+  const materialId = Number(
+    material?.id
   );
+
+  if (
+    !Number.isInteger(materialId) ||
+    materialId <= 0 ||
+    deletingMaterialId
+  ) {
+    return;
+  }
+
+  const materialTitle =
+    material?.material_title ||
+    "this material";
+
+  const confirmed =
+    window.confirm(
+      `Are you sure you want to delete "${materialTitle}"?`
+    );
+
+  if (!confirmed) {
+    return;
+  }
+
+  try {
+    setDeletingMaterialId(
+      materialId
+    );
+
+    setError("");
+    setSuccessMessage("");
+
+    await deleteMaterial(
+      materialId
+    );
+
+    await loadData();
+
+    setSuccessMessage(
+      "Learning material deleted successfully."
+    );
+  } catch (deleteError) {
+    console.error(
+      "Failed to delete material:",
+      deleteError
+    );
+
+    setError(
+      deleteError?.message ||
+        "Failed to delete the learning material."
+    );
+  } finally {
+    setDeletingMaterialId(null);
+  }
+}
+
+  const allMaterials = useMemo(
+  () =>
+    courses.flatMap((course) =>
+      Array.isArray(course.materials)
+        ? course.materials.map(
+            (material) => ({
+              ...material,
+              course_id: course.id,
+              course_title:
+                course.course_title ||
+                course.title ||
+                "",
+              course_status:
+                course.approval_status ||
+                "",
+            })
+          )
+        : []
+    ),
+  [courses]
+);
 
   const stats = useMemo(
     () => [
@@ -270,23 +351,25 @@ export default function TrainerDashboard() {
         </div>
       </header>
 
-      {error && (
-        <div
-          role="alert"
-          className="flex items-start justify-between gap-5 rounded-xl border border-red-200 bg-red-50 p-4 text-red-700"
-        >
-          <p>{error}</p>
+      {successMessage && (
+  <div
+    role="status"
+    className="flex items-start justify-between gap-5 rounded-xl border border-green-200 bg-green-50 p-4 text-green-700"
+  >
+    <p>{successMessage}</p>
 
-          <button
-            type="button"
-            onClick={() => setError("")}
-            className="font-semibold hover:underline"
-            aria-label="Dismiss error"
-          >
-            Dismiss
-          </button>
-        </div>
-      )}
+    <button
+      type="button"
+      onClick={() =>
+        setSuccessMessage("")
+      }
+      className="font-semibold hover:underline cursor-pointer"
+      aria-label="Dismiss success message"
+    >
+      Dismiss
+    </button>
+  </div>
+)}
 
       <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-4">
         {stats.map((item) => (
@@ -318,15 +401,21 @@ export default function TrainerDashboard() {
 
       <div className="grid grid-cols-1 gap-6 xl:grid-cols-2">
         <RecentMaterials
-          materials={allMaterials}
-          onViewAll={() =>
-            navigate("/trainer/courses")
-          }
-          onUpload={handleOpenUploadModal}
-          uploadDisabled={
-            courses.length === 0
-          }
-        />
+  materials={allMaterials}
+  onViewAll={() =>
+    navigate("/trainer/courses")
+  }
+  onUpload={handleOpenUploadModal}
+  onDelete={
+    handleDeleteMaterial
+  }
+  deletingMaterialId={
+    deletingMaterialId
+  }
+  uploadDisabled={
+    courses.length === 0
+  }
+/>
 
         <RecentActivity
           courses={courses}

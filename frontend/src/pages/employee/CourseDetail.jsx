@@ -31,6 +31,10 @@ import {
   updateCourseProgress,
 } from '../../services/courseService';
 
+import {
+  generateCertificate,
+} from '../../services/userService';
+
 const REQUEST_TIMEOUT_MS = 15000;
 
 const TABS = [
@@ -828,6 +832,23 @@ export default function CourseDetail() {
             numericCourseId,
             nextProgress
           );
+
+          if (nextProgress >= 100) {
+  try {
+    await generateCertificate(numericCourseId);
+  } catch (error) {
+    // Ignore duplicate certificate
+    if (
+      !(error instanceof Error) ||
+      !error.message.includes('already been generated')
+    ) {
+      console.error(
+        'GENERATE CERTIFICATE ERROR:',
+        error
+      );
+    }
+  }
+}
 
           if (
             !isMountedRef.current
