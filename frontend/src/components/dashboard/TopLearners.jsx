@@ -23,24 +23,29 @@ export default function TopLearners({ leaderboard = [], currentUserId }) {
         <Trophy size={20} className="text-amber-400" />
       </div>
 
-      <ul className="space-y-4">
-        {top3.map((learner, idx) => (
-          <li key={learner.user_id} className="flex items-center gap-3">
-            <span
-              className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${MEDAL[idx] ?? 'bg-gray-100 text-gray-500'}`}
-            >
-              {getInitials(learner.full_name)}
-            </span>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-semibold text-gray-800 truncate">{learner.full_name}</p>
-              <p className="text-xs text-gray-400 truncate">{learner.department_name}</p>
-            </div>
-            <span className="text-sm font-bold text-brand-600 whitespace-nowrap">
-              {learner.total_points.toLocaleString()} pts
-            </span>
-          </li>
-        ))}
-      </ul>
+      {top3.length === 0 ? (
+        <p className="text-sm text-gray-400 py-4 text-center">No leaderboard rankings available yet.</p>
+      ) : (
+        <ul className="space-y-4">
+          {top3.map((learner, idx) => (
+            <li key={learner.user_id} className="flex items-center gap-3">
+              <span
+                className={`w-9 h-9 rounded-full flex items-center justify-center text-sm font-bold shrink-0 ${MEDAL[idx] ?? 'bg-gray-100 text-gray-500'}`}
+              >
+                {getInitials(learner.full_name)}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-semibold text-gray-800 truncate">{learner.full_name}</p>
+                <p className="text-xs text-gray-400 truncate">{learner.department_name}</p>
+              </div>
+              <span className="text-sm font-bold text-brand-600 whitespace-nowrap">
+                {learner.total_points.toLocaleString()} pts
+              </span>
+            </li>
+          ))}
+        </ul>
+      )}
+
 
       {currentUserEntry && !isInTop3 && (
         <div className="mt-4 pt-4 border-t border-gray-100 flex items-center gap-3">

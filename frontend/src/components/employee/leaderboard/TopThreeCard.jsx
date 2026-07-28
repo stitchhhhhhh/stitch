@@ -2,6 +2,14 @@ export default function TopThreeCard({
   user,
   center = false,
 }) {
+  if (!user) {
+    return (
+      <div className={`rounded-3xl border border-dashed border-gray-200 p-8 text-center text-gray-400 ${center ? 'py-12' : ''}`}>
+        <p className="text-sm font-medium">Position Open</p>
+      </div>
+    );
+  }
+
   return (
     <div
       className={`
@@ -116,4 +124,4 @@ export default function TopThreeCard({
 
     </div>
   );
-}
+}

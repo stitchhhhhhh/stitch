@@ -222,24 +222,8 @@ export default function EmployeeDashboard() {
               </button>
             </div>
 
-            <div className="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm">
-              <div className="flex justify-between items-center mb-5">
-                <h3 className="text-xl font-bold text-gray-900">Leaderboard</h3>
-                <span className="bg-gray-200 text-gray-600 text-xs px-3 py-1 rounded-full">
-                  COMING SOON
-                </span>
-              </div>
+            <TopLearners leaderboard={leaderboard} currentUserId={userId} />
 
-              <div className="bg-gray-100 rounded-full px-5 py-3 text-center text-gray-600 text-sm">
-                Leaderboard is currently empty
-              </div>
-
-              <div className="mt-5 space-y-3">
-                <div className="h-3 bg-gray-100 rounded-full"></div>
-                <div className="h-3 bg-gray-100 rounded-full"></div>
-                <div className="h-3 bg-gray-100 rounded-full"></div>
-              </div>
-            </div>
 
           </div>
         </div>

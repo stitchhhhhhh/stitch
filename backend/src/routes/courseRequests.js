@@ -191,10 +191,28 @@ router.post(
       })
 
       if (duplicateRequest) {
+        if (duplicateRequest.status === 'pending') {
+          // If already pending, update the assigned trainer seamlessly
+          const updatedRequest = await prisma.courseRequest.update({
+            where: { id: duplicateRequest.id },
+            data: { trainer_id: trainerId },
+            include: {
+              program: true,
+              trainer: {
+                select: { id: true, full_name: true, email: true }
+              }
+            }
+          })
+          return res.status(200).json({
+            message: 'Assigned trainer updated for this course request.',
+            request: updatedRequest
+          })
+        }
         return res.status(409).json({
-          message: 'Program ini masih memiliki course request aktif'
+          message: 'This program already has an active course request in progress.'
         })
       }
+
 
       const result = await prisma.$transaction(async (tx) => {
         const request = await tx.courseRequest.create({

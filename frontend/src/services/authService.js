@@ -14,6 +14,7 @@ export async function fetchUserFromToken(token) {
   const res = await fetch('/api/auth/me', {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error('Gagal mengambil data user');
+  if (!res.ok) throw new Error('Failed to fetch user profile');
+
   return res.json(); // { user, role }
 }

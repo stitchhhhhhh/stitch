@@ -15,7 +15,7 @@ export default function RequestTrainerModal({ programs, onClose, onRequested }) 
   async function handleSubmit(e) {
     e.preventDefault();
     if (!programId || !trainerId) {
-      setError("Program dan trainer wajib dipilih.");
+      setError("Please select both a program and a trainer.");
       return;
     }
     setSaving(true);
@@ -34,33 +34,33 @@ export default function RequestTrainerModal({ programs, onClose, onRequested }) 
   return (
     <div className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl p-8 w-full max-w-lg">
-        <h2 className="text-2xl font-bold text-[#253B80] mb-6">Request Course ke Trainer</h2>
+        <h2 className="text-2xl font-bold text-[#253B80] mb-6">Request Course Creation</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="text-sm text-gray-500">Program</label>
+            <label className="text-sm font-medium text-gray-700">Target Program</label>
             <select
               value={programId}
               onChange={(e) => setProgramId(e.target.value)}
-              className="w-full mt-1 border rounded-xl px-4 py-3"
+              className="w-full mt-1 border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500"
             >
-              <option value="">Pilih program...</option>
+              <option value="">Select training program...</option>
               {programs.map((p) => (
                 <option key={p.id} value={p.id}>
-                  {p.program_name}
+                  {p.program_name} ({p.program_type === 'GENERAL' ? 'General' : 'Department'})
                 </option>
               ))}
             </select>
           </div>
 
           <div>
-            <label className="text-sm text-gray-500">Trainer</label>
+            <label className="text-sm font-medium text-gray-700">Assigned Trainer</label>
             <select
               value={trainerId}
               onChange={(e) => setTrainerId(e.target.value)}
-              className="w-full mt-1 border rounded-xl px-4 py-3"
+              className="w-full mt-1 border border-gray-300 rounded-xl px-4 py-3 text-sm focus:outline-none focus:border-brand-500"
             >
-              <option value="">Pilih trainer...</option>
+              <option value="">Select active trainer...</option>
               {trainers.map((t) => (
                 <option key={t.id} value={t.id}>
                   {t.full_name} ({t.email})
@@ -69,22 +69,22 @@ export default function RequestTrainerModal({ programs, onClose, onRequested }) 
             </select>
           </div>
 
-          {error && <p className="text-sm text-red-500">{error}</p>}
+          {error && <p className="text-sm text-red-500 font-medium">{error}</p>}
 
           <div className="flex justify-end gap-3 pt-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-6 py-3 rounded-xl border hover:bg-gray-100"
+              className="px-6 py-3 rounded-xl border text-gray-600 hover:bg-gray-100 font-medium"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={saving}
-              className="px-6 py-3 rounded-xl bg-[#3948F2] text-white hover:bg-[#2836d9] disabled:opacity-50"
+              className="px-6 py-3 rounded-xl bg-[#3046D3] text-white hover:bg-[#253B80] font-medium disabled:opacity-50 transition"
             >
-              {saving ? "Mengirim..." : "Kirim Request"}
+              {saving ? "Sending..." : "Submit Request"}
             </button>
           </div>
         </form>
@@ -92,3 +92,4 @@ export default function RequestTrainerModal({ programs, onClose, onRequested }) 
     </div>
   );
 }
+

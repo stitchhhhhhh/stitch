@@ -184,62 +184,43 @@ export default function Reports() {
         <div className="flex flex-col sm:flex-row gap-3">
           <button
             type="button"
-            onClick={() =>
-              handleExport("excel")
-            }
-            disabled={Boolean(
-              exportingFormat
-            )}
-            className="bg-[#2F3FE4] disabled:opacity-60 text-white px-5 py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-[#2433C7]"
+            onClick={() => handleExport("excel")}
+            disabled={Boolean(exportingFormat)}
+            className="bg-[#2F3FE4] disabled:opacity-60 text-white px-5 py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-[#2433C7] font-medium transition"
           >
             {exportingFormat === "excel" ? (
-              <RefreshCw
-                size={18}
-                className="animate-spin"
-              />
+              <RefreshCw size={18} className="animate-spin" />
             ) : (
               <FileSpreadsheet size={18} />
             )}
-
-            {exportingFormat === "excel"
-              ? "Exporting Excel..."
-              : "Export Excel"}
+            {exportingFormat === "excel" ? "Exporting..." : "Export Excel (.xlsx)"}
           </button>
 
           <button
             type="button"
-            onClick={() =>
-              handleExport("pdf")
-            }
-            disabled={Boolean(
-              exportingFormat
-            )}
-            className="bg-white disabled:opacity-60 border border-gray-200 text-gray-700 px-5 py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50"
+            onClick={() => handleExport("pdf")}
+            disabled={Boolean(exportingFormat)}
+            className="bg-white disabled:opacity-60 border border-gray-200 text-gray-700 px-5 py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 font-medium transition"
           >
             {exportingFormat === "pdf" ? (
-              <RefreshCw
-                size={18}
-                className="animate-spin"
-              />
+              <RefreshCw size={18} className="animate-spin" />
             ) : (
               <FileText size={18} />
             )}
-
-            {exportingFormat === "pdf"
-              ? "Exporting PDF..."
-              : "Export PDF"}
+            {exportingFormat === "pdf" ? "Exporting..." : "Export PDF"}
           </button>
 
           <button
             type="button"
             onClick={loadReportSummary}
-            className="bg-white border border-gray-200 text-gray-700 px-5 py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50"
+            className="bg-white border border-gray-200 text-gray-700 px-5 py-3 rounded-xl flex items-center justify-center gap-2 hover:bg-gray-50 font-medium transition"
           >
             <RefreshCw size={18} />
             Refresh
           </button>
         </div>
       </div>
+
 
       {error && (
         <div className="bg-red-50 text-red-700 border border-red-100 p-4 rounded-xl">
